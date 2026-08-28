@@ -1,0 +1,84 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Necesario para el login OIDC contra AWS (sin claves estáticas).
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  # Nombres derivados de environments/dev.tfvars (project-environment)
+  ECR_REPOSITORY: repo-scanner-dev
+  ECS_CLUSTER: repo-scanner-dev-cluster
+  ECS_SERVICE: repo-scanner-dev-svc
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build & push image (arm64, igual que Fargate)
+        uses: docker/build-push-action@v6
+        with:
+          context: ws-repo-scanner
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Forzar redespliegue del servicio ECS
+        run: |
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE"
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web-ui-repo-scanner/package-lock.json
+
+      - name: Build Angular
+        working-directory: web-ui-repo-scanner
+        run: |
+          npm ci
+          npm run build
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync a S3 + invalidar CloudFront
+        run: |
+          aws s3 sync web-ui-repo-scanner/dist/web-ui-repo-scanner/browser \
+            "s3://${{ vars.FRONTEND_BUCKET }}" --delete
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths '/*'

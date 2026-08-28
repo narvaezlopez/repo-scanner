@@ -170,6 +170,13 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
+  # Graviton: build nativo en Mac Apple Silicon y ~20% más barato.
+  # Cambia a "X86_64" si construyes la imagen para amd64.
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = var.cpu_architecture
+  }
+
   container_definitions = jsonencode([{
     name      = "api"
     image     = local.image

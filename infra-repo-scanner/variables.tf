@@ -59,6 +59,12 @@ variable "backend_memory" {
   default     = 512
 }
 
+variable "backend_cpu_architecture" {
+  description = "ARM64 (Graviton, build nativo en Apple Silicon) o X86_64"
+  type        = string
+  default     = "ARM64"
+}
+
 # --- frontend (S3 + CloudFront) ---
 variable "frontend_dist_path" {
   description = "Ruta local al build de Angular (carpeta browser/) para subir a S3"

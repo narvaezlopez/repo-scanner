@@ -64,6 +64,29 @@ aws cloudfront create-invalidation \
   --paths '/*'
 ```
 
+## CI/CD con GitHub Actions
+
+El workflow [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) hace,
+en cada push a `main`: build+push de la imagen a ECR + `force-new-deployment` del
+servicio ECS, y build de Angular + `s3 sync` + invalidación de CloudFront.
+Autentica con **OIDC** (sin claves estáticas).
+
+Configuración única:
+
+```bash
+# 1. crear el rol de despliegue (necesita la infra ya aplicada)
+terraform apply -var-file=environments/dev.tfvars -var 'github_repo=narvaezlopez/repo-scanner'
+#    si el OIDC provider de GitHub ya existe en la cuenta, añade:
+#    -var 'create_github_oidc_provider=false'
+
+# 2. registrar las variables en el repo de GitHub
+gh variable set AWS_DEPLOY_ROLE_ARN        -b "$(terraform output -raw cicd_deploy_role_arn)"
+gh variable set FRONTEND_BUCKET            -b "$(terraform output -raw frontend_bucket)"
+gh variable set CLOUDFRONT_DISTRIBUTION_ID -b "$(terraform output -raw frontend_cloudfront_distribution_id)"
+```
+
+(sin `gh`: Settings → Secrets and variables → Actions → Variables)
+
 ## Estado remoto
 
 `backend.tf` trae la config de backend S3 comentada. Para la kata puedes trabajar

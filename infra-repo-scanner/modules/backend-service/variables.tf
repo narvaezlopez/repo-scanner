@@ -47,3 +47,9 @@ variable "health_check_path" {
   type    = string
   default = "/health"
 }
+
+variable "cpu_architecture" {
+  description = "ARM64 (Graviton) o X86_64. Debe coincidir con la arquitectura de la imagen."
+  type        = string
+  default     = "ARM64"
+}

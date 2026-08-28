@@ -121,5 +121,5 @@ resource "aws_s3_object" "site" {
   key          = each.value
   source       = "${var.dist_path}/${each.value}"
   etag         = filemd5("${var.dist_path}/${each.value}")
-  content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), "application/octet-stream")
+  content_type = lookup(local.mime_types, try(regex("\\.[^.]+$", each.value), ""), "application/octet-stream")
 }

@@ -19,11 +19,12 @@ module "backend" {
   public_subnet_ids  = module.network.public_subnet_ids
   private_subnet_ids = module.network.private_subnet_ids
 
-  container_port = var.backend_container_port
-  image_tag      = var.backend_image_tag
-  desired_count  = var.backend_desired_count
-  cpu            = var.backend_cpu
-  memory         = var.backend_memory
+  container_port   = var.backend_container_port
+  image_tag        = var.backend_image_tag
+  desired_count    = var.backend_desired_count
+  cpu              = var.backend_cpu
+  memory           = var.backend_memory
+  cpu_architecture = var.backend_cpu_architecture
 }
 
 module "frontend" {
