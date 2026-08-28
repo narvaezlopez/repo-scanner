@@ -14,12 +14,25 @@ variable "create_github_oidc_provider" {
   default     = true
 }
 
+variable "github_sub_claims" {
+  description = "Patrones StringLike para el claim `sub` del token OIDC. Vacío = deriva de github_repo y acepta tanto el formato clásico (repo:owner/name:*) como el de IDs inmutables (repo:owner@ID/name@ID:*)."
+  type        = list(string)
+  default     = []
+}
+
 data "aws_caller_identity" "current" {}
 
 locals {
   cicd_enabled = var.github_repo != ""
   gh_oidc_host = "token.actions.githubusercontent.com"
   gh_oidc_arn  = var.create_github_oidc_provider && local.cicd_enabled ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.gh_oidc_host}"
+
+  github_owner = local.cicd_enabled ? split("/", var.github_repo)[0] : ""
+  github_name  = local.cicd_enabled ? split("/", var.github_repo)[1] : ""
+  github_sub_patterns = length(var.github_sub_claims) > 0 ? var.github_sub_claims : [
+    "repo:${var.github_repo}:*",
+    "repo:${local.github_owner}@*/${local.github_name}@*:*",
+  ]
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -51,7 +64,7 @@ data "aws_iam_policy_document" "cicd_assume" {
     condition {
       test     = "StringLike"
       variable = "${local.gh_oidc_host}:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      values   = local.github_sub_patterns
     }
   }
 }
