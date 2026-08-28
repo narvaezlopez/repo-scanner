@@ -1,6 +1,3 @@
-# Espejo local del despliegue: API en contenedor + SPA servida por nginx.
-# Sirve para verificar que ambas imágenes construyen y responden antes de
-# llevarlas a AWS (ECS Fargate para la API, S3+CloudFront para la SPA).
 services:
   api:
     build: ./ws-repo-scanner

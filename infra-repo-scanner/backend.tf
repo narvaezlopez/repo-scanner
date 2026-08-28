@@ -1,6 +1,4 @@
-# Estado remoto. Para la primera pasada puedes dejarlo comentado y usar estado
-# local. Cuando exista el bucket, descoméntalo y ejecuta:
-#   terraform init -migrate-state
+# Estado local por defecto. Para estado remoto, crear el bucket y descomentar:
 #
 # terraform {
 #   backend "s3" {

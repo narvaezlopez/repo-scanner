@@ -1,6 +1,4 @@
-# Rol que asume GitHub Actions vía OIDC para desplegar (build+push a ECR,
-# redespliegue de ECS, sync a S3, invalidación de CloudFront).
-# Se crea sólo si defines `github_repo`. Salida: `cicd_deploy_role_arn`.
+# Rol OIDC para GitHub Actions. Se crea sólo si se define github_repo.
 
 variable "github_repo" {
   description = "owner/repo de GitHub habilitado para desplegar (p.ej. narvaezlopez/repo-scanner). Vacío = no crear rol CI."

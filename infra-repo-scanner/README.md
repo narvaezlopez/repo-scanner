@@ -1,16 +1,31 @@
 # infra-repo-scanner
 
-Infraestructura AWS (Terraform) para desplegar el esqueleto de **Code Insight AI**.
-Alcance actual: sólo lo necesario para verificar que **frontend y backend
-despliegan**. Nada de SQS, DynamoDB ni Bedrock todavía.
+Infraestructura AWS (Terraform) para desplegar **Code Insight AI**.
+Alcance actual: frontend + backend desplegables. Nada de SQS ni DynamoDB todavía.
 
 ## Qué crea
 
 | Módulo | Recursos |
 |---|---|
 | `network` | VPC, 2 subredes públicas + 2 privadas, IGW, 1 NAT Gateway, route tables |
-| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM |
+| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secreto en Secrets Manager para `ANTHROPIC_API_KEY` + permiso de lectura en el rol de ejecución |
 | `frontend` | Bucket S3 privado, CloudFront + Origin Access Control, política de bucket, subida del build de Angular |
+
+## LLM
+
+El backend llama a Claude vía la **API de Anthropic**. El `apply` crea el secreto
+`repo-scanner-dev/anthropic-api-key` (vacío) y lo cablea al contenedor. El valor
+de la API key **no** se gestiona en Terraform (no acaba en el state); ponlo
+aparte tras el primer `apply`:
+
+```bash
+aws secretsmanager put-secret-value \
+  --secret-id repo-scanner-dev/anthropic-api-key \
+  --secret-string 'sk-ant-...' --region us-east-1
+# y refresca el servicio para que la tarea recoja el valor
+aws ecs update-service --cluster repo-scanner-dev-cluster \
+  --service repo-scanner-dev-svc --force-new-deployment --region us-east-1
+```
 
 ```
 Internet ──► CloudFront ──► S3 (SPA, privado)

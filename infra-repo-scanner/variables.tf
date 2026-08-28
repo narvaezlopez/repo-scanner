@@ -65,6 +65,12 @@ variable "backend_cpu_architecture" {
   default     = "ARM64"
 }
 
+variable "anthropic_model" {
+  description = "ID del modelo Claude. Menor coste: claude-sonnet-5; máxima capacidad: claude-opus-5"
+  type        = string
+  default     = "claude-sonnet-5"
+}
+
 # --- frontend (S3 + CloudFront) ---
 variable "frontend_dist_path" {
   description = "Ruta local al build de Angular (carpeta browser/) para subir a S3"

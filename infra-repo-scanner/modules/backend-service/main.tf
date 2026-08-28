@@ -58,10 +58,29 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Rol de la aplicación (sin permisos por ahora; aquí irán DynamoDB/SQS/Bedrock).
 resource "aws_iam_role" "task" {
   name               = "${var.name_prefix}-task"
   assume_role_policy = data.aws_iam_policy_document.assume_ecs_tasks.json
+}
+
+# El valor se define fuera de Terraform: aws secretsmanager put-secret-value
+resource "aws_secretsmanager_secret" "anthropic_api_key" {
+  name        = "${var.name_prefix}/anthropic-api-key"
+  description = "API key de Anthropic para el backend de Code Insight AI"
+}
+
+data "aws_iam_policy_document" "task_exec_secrets" {
+  statement {
+    sid       = "ReadAnthropicApiKey"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.anthropic_api_key.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "task_exec_secrets" {
+  name   = "read-anthropic-secret"
+  role   = aws_iam_role.task_execution.id
+  policy = data.aws_iam_policy_document.task_exec_secrets.json
 }
 
 # --- security groups ---
@@ -170,8 +189,7 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
-  # Graviton: build nativo en Mac Apple Silicon y ~20% más barato.
-  # Cambia a "X86_64" si construyes la imagen para amd64.
+  # Debe coincidir con la arquitectura de la imagen publicada en ECR.
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = var.cpu_architecture
@@ -187,8 +205,13 @@ resource "aws_ecs_task_definition" "this" {
     }]
     environment = [
       { name = "NODE_ENV", value = "production" },
-      { name = "PORT", value = tostring(var.container_port) }
+      { name = "PORT", value = tostring(var.container_port) },
+      { name = "ANTHROPIC_MODEL", value = var.anthropic_model },
     ]
+    secrets = [{
+      name      = "ANTHROPIC_API_KEY"
+      valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
+    }]
     logConfiguration = {
       logDriver = "awslogs"
       options = {

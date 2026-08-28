@@ -12,7 +12,6 @@ server.listen(config.PORT, () => {
   logger.info(`ws-repo-scanner escuchando en :${config.PORT} (${config.NODE_ENV})`);
 });
 
-// Apagado ordenado: el ALB deja de enrutar tras fallar el health check.
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.on(signal, () => {
     logger.info(`${signal} recibido, cerrando servidor`);

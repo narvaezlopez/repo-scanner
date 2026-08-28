@@ -2,11 +2,6 @@ import type { Server } from 'node:http';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { logger } from '../logger.js';
 
-/**
- * Hub WebSocket mínimo montado sobre el mismo servidor HTTP (ruta `/ws`).
- * De momento sólo confirma la conexión y responde a un `ping`. Aquí vivirá
- * más adelante el push de progreso de los análisis.
- */
 export function attachWebSocket(server: Server): WebSocketServer {
   const wss = new WebSocketServer({ server, path: '/ws' });
 

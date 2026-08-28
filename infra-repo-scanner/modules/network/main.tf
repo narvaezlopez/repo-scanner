@@ -55,7 +55,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# NAT único (suficiente para dev; en prod uno por AZ).
 resource "aws_eip" "nat" {
   domain = "vpc"
   tags   = { Name = "${var.name_prefix}-nat-eip" }

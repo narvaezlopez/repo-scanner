@@ -53,3 +53,9 @@ variable "cpu_architecture" {
   type        = string
   default     = "ARM64"
 }
+
+variable "anthropic_model" {
+  description = "ID del modelo Claude en la API de Anthropic."
+  type        = string
+  default     = "claude-sonnet-5"
+}

@@ -25,6 +25,7 @@ module "backend" {
   cpu              = var.backend_cpu
   memory           = var.backend_memory
   cpu_architecture = var.backend_cpu_architecture
+  anthropic_model  = var.anthropic_model
 }
 
 module "frontend" {
