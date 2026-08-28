@@ -1,0 +1,78 @@
+# infra-repo-scanner
+
+Infraestructura AWS (Terraform) para desplegar el esqueleto de **Code Insight AI**.
+Alcance actual: sólo lo necesario para verificar que **frontend y backend
+despliegan**. Nada de SQS, DynamoDB ni Bedrock todavía.
+
+## Qué crea
+
+| Módulo | Recursos |
+|---|---|
+| `network` | VPC, 2 subredes públicas + 2 privadas, IGW, 1 NAT Gateway, route tables |
+| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM |
+| `frontend` | Bucket S3 privado, CloudFront + Origin Access Control, política de bucket, subida del build de Angular |
+
+```
+Internet ──► CloudFront ──► S3 (SPA, privado)
+Internet ──► ALB (HTTP:80) ──► ECS Fargate (API :3000, subredes privadas) ──► NAT ──► Internet
+```
+
+## Requisitos
+
+- Terraform ≥ 1.9
+- Credenciales AWS con permisos suficientes (`aws configure` o variables de entorno)
+- Imagen de la API publicada en ECR (ver más abajo)
+- Build de Angular generado: `cd ../web-ui-repo-scanner && npm run build`
+
+## Uso
+
+```bash
+cd infra-repo-scanner
+terraform init
+terraform apply -var-file=environments/dev.tfvars
+```
+
+En la primera pasada el servicio ECS quedará sin tareas sanas hasta que exista
+una imagen. Flujo recomendado:
+
+```bash
+# 1. crear sólo el repositorio ECR
+terraform apply -target=module.backend.aws_ecr_repository.this -var-file=environments/dev.tfvars
+
+# 2. construir y publicar la imagen
+ECR_URL=$(terraform output -raw backend_ecr_repository_url)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "${ECR_URL%/*}"
+docker build -t "$ECR_URL:latest" ../ws-repo-scanner
+docker push "$ECR_URL:latest"
+
+# 3. aplicar el resto
+terraform apply -var-file=environments/dev.tfvars
+```
+
+Salidas útiles:
+
+```bash
+terraform output backend_alb_dns_name   # http://...  -> probar /health
+terraform output frontend_url           # https://...cloudfront.net
+```
+
+Tras subir una versión nueva de la SPA, invalida la caché:
+
+```bash
+aws cloudfront create-invalidation \
+  --distribution-id "$(terraform output -raw frontend_cloudfront_distribution_id)" \
+  --paths '/*'
+```
+
+## Estado remoto
+
+`backend.tf` trae la config de backend S3 comentada. Para la kata puedes trabajar
+con estado local; cuando quieras estado remoto, crea el bucket, descomenta el
+bloque y ejecuta `terraform init -migrate-state`.
+
+## Limitaciones conscientes (siguiente iteración)
+
+- ALB sólo HTTP. HTTPS necesita dominio + certificado ACM.
+- 1 sola tarea ECS y 1 NAT: barato, no HA.
+- Sin WAF, sin VPC endpoints, sin autoscaling.
+- El `terraform apply` sube la SPA; en un pipeline real sería `aws s3 sync` + invalidación.

@@ -1,0 +1,8 @@
+project     = "repo-scanner"
+environment = "dev"
+aws_region  = "us-east-1"
+
+backend_image_tag     = "latest"
+backend_desired_count = 1
+
+frontend_dist_path = "../web-ui-repo-scanner/dist/web-ui-repo-scanner/browser"
