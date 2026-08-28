@@ -4,15 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-
-# Necesario para el login OIDC contra AWS (sin claves estáticas).
 permissions:
   id-token: write
   contents: read
-
 env:
   AWS_REGION: us-east-1
-  # Nombres derivados de environments/dev.tfvars (project-environment)
   ECR_REPOSITORY: repo-scanner-dev
   ECS_CLUSTER: repo-scanner-dev-cluster
   ECS_SERVICE: repo-scanner-dev-svc
@@ -24,6 +20,7 @@ concurrency:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +53,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' && vars.FRONTEND_BUCKET != '' }}
     steps:
       - uses: actions/checkout@v4
 

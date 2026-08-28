@@ -94,7 +94,7 @@ resource "aws_security_group" "service" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Tráfico del ALB al contenedor"
+    description     = "Trafico del ALB al contenedor"
     from_port       = var.container_port
     to_port         = var.container_port
     protocol        = "tcp"
