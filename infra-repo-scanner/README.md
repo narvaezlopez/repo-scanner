@@ -14,27 +14,34 @@ Alcance actual: frontend + backend + base de datos desplegables. Nada de SQS ni 
 
 ## Base de datos
 
-RDS no es público. Terraform genera la contraseña y la deja en el secreto
-`repo-scanner-dev/database` como JSON (`username`, `password`, `host`, `port`,
-`dbname`, `schema`). El contenedor recibe `DB_HOST/DB_PORT/DB_NAME/DB_SCHEMA`
-como env y `DB_USER/DB_PASSWORD` desde ese secreto. El proyecto **no crea el
-esquema**: hay que cargar `../ws-repo-scanner/db/schema.sql` una vez.
+RDS **no es público** (subredes privadas, `rds.force_ssl` activo). Terraform
+genera la contraseña y la deja en el secreto `repo-scanner-dev/database` como
+JSON (`username`, `password`, `host`, `port`, `dbname`, `schema`). El contenedor
+recibe `DB_HOST/DB_PORT/DB_NAME/DB_SCHEMA/DB_SSL` como env y `DB_USER/DB_PASSWORD`
+desde ese secreto. El proyecto **no crea el esquema**: hay que cargar
+`../ws-repo-scanner/db/schema.sql` una vez.
 
-Bootstrap del esquema (abrir → cargar → cerrar):
+`provision.sh` lo hace en su paso 5 con un `aws ecs run-task` puntual dentro de
+la VPC (reutiliza la task def del backend, cambia el comando por un `node -e`
+que ejecuta el SQL con el cliente `pg` de la imagen). A mano:
 
 ```bash
-MYIP=$(curl -s https://checkip.amazonaws.com)
-terraform apply -var-file=environments/dev.tfvars \
-  -var "db_publicly_accessible=true" -var "db_admin_cidr=${MYIP}/32"
-
-read HOST PORT USER PASS DB < <(aws secretsmanager get-secret-value \
-  --secret-id repo-scanner-dev/database --query SecretString --output text \
-  | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["host"],d["port"],d["username"],d["password"],d["dbname"])')
-
-PGPASSWORD="$PASS" psql -h "$HOST" -p "$PORT" -U "$USER" -d "$DB" -f ../ws-repo-scanner/db/schema.sql
-
-terraform apply -var-file=environments/dev.tfvars   # vuelve a cerrar la DB
+NETCFG=$(aws ecs describe-services --cluster repo-scanner-dev-cluster \
+  --services repo-scanner-dev-svc --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
+SUBNETS=$(jq -r '.subnets|join(",")' <<<"$NETCFG"); SGS=$(jq -r '.securityGroups|join(",")' <<<"$NETCFG")
+SQL=$(cat ../ws-repo-scanner/db/schema.sql)
+NODE='const{Client}=require("pg");const c=new Client({host:process.env.DB_HOST,port:+process.env.DB_PORT,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_NAME,ssl:{rejectUnauthorized:false}});c.connect().then(()=>c.query(process.env.SCHEMA_SQL)).then(()=>console.log("OK")).then(()=>c.end()).catch(e=>{console.error(e.message);process.exit(1)});'
+OV=$(jq -nc --arg s "$NODE" --arg sql "$SQL" '{containerOverrides:[{name:"api",command:["node","-e",$s],environment:[{name:"SCHEMA_SQL",value:$sql}]}]}')
+aws ecs run-task --cluster repo-scanner-dev-cluster --task-definition repo-scanner-dev \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=DISABLED}" \
+  --overrides "$OV"
+# logs: aws logs tail /ecs/repo-scanner-dev --since 5m   -> "SCHEMA LOADED OK"
 ```
+
+Las variables `db_publicly_accessible` / `db_admin_cidr` siguen existiendo por si
+alguna vez hace falta abrirla, pero el endpoint público **no es alcanzable**
+mientras la instancia esté en subred privada; el `run-task` es la vía real.
 
 ## LLM
 
@@ -68,8 +75,12 @@ Internet ──► ALB (HTTP:80) ──► ECS Fargate (API :3000, subredes priv
 
 ## Uso
 
-De cero a funcionando (build front + apply + push imagen + secreto + redeploy +
-variables de GitHub + smoke test):
+De cero a funcionando, también tras un `terraform destroy`. `provision.sh` hace,
+en orden: purga de secretos en cola de borrado → build del front → `terraform
+apply` → build+push de la imagen → API key a Secrets Manager → **carga de
+`db/schema.sql` en RDS** (vía `aws ecs run-task` en la VPC) → redespliegue de ECS
+a la última task definition → variables de GitHub → smoke test (`/health` +
+`POST`/`GET /api/v1/jobs`).
 
 ```bash
 cd infra-repo-scanner
@@ -77,6 +88,10 @@ ANTHROPIC_API_KEY=sk-ant-... ./provision.sh
 ```
 
 (si la key ya está en `../ws-repo-scanner/.env`, basta `./provision.sh`)
+
+Flags: `SKIP_DB_BOOTSTRAP=1` (no carga `db/schema.sql`), `SKIP_GH=1` (no toca las
+variables de GitHub). Todos los `terraform apply` van con `-auto-approve`.
+Requiere `terraform`, `aws`, `docker`, `node`, `npm`, `jq`, `curl`, `python3`.
 
 ### Manual
 

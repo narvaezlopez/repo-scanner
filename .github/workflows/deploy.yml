@@ -48,7 +48,8 @@ jobs:
 
       - name: Forzar redespliegue del servicio ECS
         run: |
-          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --task-definition "$ECR_REPOSITORY" --force-new-deployment
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE"
 
   frontend:

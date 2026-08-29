@@ -22,6 +22,7 @@ export class DatabaseConnect {
       password: config.DB_PASSWORD,
       database: config.DB_NAME,
       schema: config.DB_SCHEMA,
+      ssl: config.DB_SSL ? { rejectUnauthorized: false } : false,
       synchronize: false,
       logging: config.DB_LOGGING,
       entities,

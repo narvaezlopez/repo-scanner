@@ -13,6 +13,10 @@ const schema = z.object({
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().default('postgres'),
   DB_SCHEMA: z.string().default('sch_repo_scanner'),
+  DB_SSL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   DB_LOGGING: z
     .enum(['true', 'false'])
     .default('false')

@@ -215,6 +215,7 @@ resource "aws_ecs_task_definition" "this" {
       { name = "DB_PORT", value = tostring(var.db_port) },
       { name = "DB_NAME", value = var.db_name },
       { name = "DB_SCHEMA", value = var.db_schema },
+      { name = "DB_SSL", value = "true" },
     ]
     secrets = [
       {
