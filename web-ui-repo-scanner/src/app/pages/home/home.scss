@@ -1,0 +1,28 @@
+.home {
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: #0043A9;
+    border-bottom: 1px solid #000000;
+
+    &__title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+      margin-right: 1rem;
+    }
+  }
+
+  &__content {
+    height: calc(100vh - 73px);
+    background: #D4E5F8;
+  }
+}

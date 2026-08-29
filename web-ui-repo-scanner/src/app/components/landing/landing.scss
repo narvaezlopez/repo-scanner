@@ -1,0 +1,207 @@
+.landing {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - var(--space-48));
+  margin: 0 auto;
+  padding: var(--space-24);
+
+  > * + * {
+    margin-block-start: var(--space-24);
+  }
+
+  &__intro {
+    text-align: center;
+  }
+
+  &__title {
+    margin: 0 0 var(--space-4);
+    font-size: 1.75rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    margin: 0;
+    color: var(--color-muted);
+
+    code {
+      font-family: inherit;
+      font-weight: 700;
+    }
+  }
+
+  &__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-40) var(--space-24);
+    background: var(--color-surface);
+    border: var(--border-width) dashed var(--color-border);
+    border-radius: var(--radius);
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+
+    > * + * {
+      margin-block-start: var(--space-16);
+    }
+
+    &--dragging {
+      background: var(--color-surface-alt);
+      border-style: solid;
+      border-color: var(--color-primary);
+    }
+  }
+
+  &__icon {
+    width: 44px;
+    height: 44px;
+    color: var(--color-primary);
+  }
+
+  &__dropzone-text {
+    margin: 0;
+    color: var(--color-muted);
+  }
+
+  &__pickers {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    > * + * {
+      margin-inline-start: var(--space-8);
+    }
+  }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    color: var(--color-muted);
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: var(--border-width);
+      background: var(--color-border);
+    }
+
+    span {
+      margin-inline: var(--space-8);
+    }
+  }
+
+  &__url {
+    display: flex;
+
+    > * + * {
+      margin-inline-start: var(--space-8);
+    }
+  }
+
+  &__url-input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-8) var(--space-16);
+    font: inherit;
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius);
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+  }
+
+  &__selected {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-16);
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+  }
+
+  &__selected-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__selected-name {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__selected-meta {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  &__selected-actions {
+    display: flex;
+    flex-shrink: 0;
+    margin-inline-start: var(--space-16);
+
+    > * + * {
+      margin-inline-start: var(--space-8);
+    }
+  }
+
+  &__error {
+    margin: 0;
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-16);
+  font: inherit;
+  font-weight: 700;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+
+  > * + * {
+    margin-inline-start: var(--space-6);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: var(--shadow-hard);
+
+    &:not(:disabled):hover {
+      background: var(--color-primary-hover);
+    }
+
+    &:not(:disabled):active {
+      transform: translate(var(--space-2), var(--space-2));
+      box-shadow: var(--space-2) var(--space-2) 0 var(--color-border);
+    }
+  }
+
+  &--ghost {
+    background: var(--color-surface);
+    color: var(--color-text);
+
+    &:hover {
+      background: var(--color-surface-alt);
+    }
+  }
+}

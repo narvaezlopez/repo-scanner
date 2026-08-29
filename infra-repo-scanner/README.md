@@ -41,6 +41,18 @@ Internet ──► ALB (HTTP:80) ──► ECS Fargate (API :3000, subredes priv
 
 ## Uso
 
+De cero a funcionando (build front + apply + push imagen + secreto + redeploy +
+variables de GitHub + smoke test):
+
+```bash
+cd infra-repo-scanner
+ANTHROPIC_API_KEY=sk-ant-... ./provision.sh
+```
+
+(si la key ya está en `../ws-repo-scanner/.env`, basta `./provision.sh`)
+
+### Manual
+
 ```bash
 cd infra-repo-scanner
 terraform init

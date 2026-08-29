@@ -1,0 +1,90 @@
+<section class="landing">
+  <div class="landing__intro">
+    <h2 class="landing__title">Analiza un repositorio</h2>
+    <p class="landing__subtitle">
+      Arrastra una carpeta, sube un <code>.zip</code> o pega la URL de un repositorio Git.
+    </p>
+  </div>
+
+  @if (selection(); as sel) {
+    <div class="landing__selected">
+      <div class="landing__selected-info">
+        <span class="landing__selected-name">{{ sel.name }}</span>
+        <span class="landing__selected-meta">
+          {{ sel.files.length }} archivo{{ sel.files.length === 1 ? '' : 's' }} ·
+          {{ humanSize(sel.totalBytes) }}
+        </span>
+      </div>
+      <div class="landing__selected-actions">
+        <button type="button" class="btn btn--ghost" (click)="clearSelection()">
+          Cambiar
+        </button>
+        <button type="button" class="btn btn--primary" (click)="confirmUpload()">
+          Analizar
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div
+      class="landing__dropzone"
+      [class.landing__dropzone--dragging]="dragging()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <svg class="landing__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M12 11v6m0-6-2.5 2.5M12 11l2.5 2.5"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+
+      @if (reading()) {
+        <p class="landing__dropzone-text">Leyendo la carpeta…</p>
+      } @else {
+        <p class="landing__dropzone-text">
+          <strong>Arrastra una carpeta o un archivo aquí</strong>
+        </p>
+        <div class="landing__pickers">
+          <label class="btn btn--ghost">
+            Seleccionar carpeta
+            <input type="file" webkitdirectory hidden (change)="onPick($event)" />
+          </label>
+          <label class="btn btn--ghost">
+            Seleccionar archivo
+            <input type="file" accept=".zip,.tar,.tar.gz,.tgz" hidden (change)="onPick($event)" />
+          </label>
+        </div>
+      }
+    </div>
+
+    <div class="landing__divider"><span>o</span></div>
+
+    <form class="landing__url" (submit)="submitUrl(); $event.preventDefault()">
+      <input
+        class="landing__url-input"
+        type="url"
+        inputmode="url"
+        placeholder="https://github.com/usuario/repositorio"
+        [value]="url()"
+        (input)="onUrlInput($event)"
+      />
+      <button type="submit" class="btn btn--primary" [disabled]="!url().trim()">
+        Analizar
+      </button>
+    </form>
+  }
+
+  @if (error(); as message) {
+    <p class="landing__error" role="alert">{{ message }}</p>
+  }
+</section>
