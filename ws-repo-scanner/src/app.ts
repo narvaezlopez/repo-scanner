@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { llm } from './llm/index.js';
+import { jobsRouter } from './adapters/inbound/http/jobs.router.js';
+import type { CreateJobUseCase } from './core/usecases/create-job.js';
+import type { GetJobUseCase } from './core/usecases/get-job.js';
 
 const completeSchema = z.object({
   prompt: z.string().min(1).max(20_000),
@@ -11,7 +14,12 @@ const completeSchema = z.object({
   maxTokens: z.coerce.number().int().positive().max(4_096).optional(),
 });
 
-export function createApp() {
+export interface AppDeps {
+  createJob: CreateJobUseCase;
+  getJob: GetJobUseCase;
+}
+
+export function createApp(deps: AppDeps) {
   const app = express();
 
   app.use(pinoHttp({ logger }));
@@ -32,10 +40,6 @@ export function createApp() {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
 
-  app.get('/api/v1/ping', (_req: Request, res: Response) => {
-    res.json({ message: 'pong', ts: new Date().toISOString() });
-  });
-
   app.post('/api/v1/llm/complete', async (req: Request, res: Response) => {
     const parsed = completeSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -50,6 +54,8 @@ export function createApp() {
       res.status(502).json({ error: 'llm_error', message: (err as Error).message });
     }
   });
+
+  app.use('/api/v1/jobs', jobsRouter({ createJob: deps.createJob, getJob: deps.getJob }));
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'not_found' });

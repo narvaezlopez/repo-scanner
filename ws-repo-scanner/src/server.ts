@@ -1,10 +1,13 @@
+import 'reflect-metadata';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
+import { compose } from './composition.js';
 import { attachWebSocket } from './ws/hub.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 
-const app = createApp();
+const container = await compose();
+const app = createApp(container);
 const server = createServer(app);
 attachWebSocket(server);
 
@@ -15,7 +18,10 @@ server.listen(config.PORT, () => {
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.on(signal, () => {
     logger.info(`${signal} recibido, cerrando servidor`);
-    server.close(() => process.exit(0));
+    server.close(async () => {
+      await container.shutdown();
+      process.exit(0);
+    });
     setTimeout(() => process.exit(1), 10_000).unref();
   });
 }

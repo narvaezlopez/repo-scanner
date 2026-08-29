@@ -7,18 +7,15 @@ export function attachWebSocket(server: Server): WebSocketServer {
 
   wss.on('connection', (socket: WebSocket) => {
     logger.info('ws client connected');
-    socket.send(JSON.stringify({ type: 'welcome', ts: Date.now() }));
 
     socket.on('message', (raw) => {
-      let msg: unknown;
       try {
-        msg = JSON.parse(raw.toString());
+        const msg = JSON.parse(raw.toString()) as { type?: string };
+        if (msg.type === 'ping') {
+          socket.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
+        }
       } catch {
         socket.send(JSON.stringify({ type: 'error', error: 'invalid_json' }));
-        return;
-      }
-      if ((msg as { type?: string }).type === 'ping') {
-        socket.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
       }
     });
 

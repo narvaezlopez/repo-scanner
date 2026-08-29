@@ -1,4 +1,23 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: scanner
+      POSTGRES_PASSWORD: scanner
+      POSTGRES_DB: repo_scanner
+    # 5433 en el host para no chocar con otro Postgres local en 5432
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      # Carga el modelo de datos en el primer arranque del contenedor
+      - ./ws-repo-scanner/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scanner -d repo_scanner"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: ./ws-repo-scanner
     ports:
@@ -7,6 +26,15 @@ services:
       NODE_ENV: production
       PORT: "3000"
       CORS_ORIGIN: "http://localhost:8088"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: scanner
+      DB_PASSWORD: scanner
+      DB_NAME: repo_scanner
+      DB_SCHEMA: sch_repo_scanner
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
@@ -19,3 +47,6 @@ services:
       - "8088:8080"
     depends_on:
       - api
+
+volumes:
+  dbdata:

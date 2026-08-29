@@ -10,8 +10,9 @@ posteriores.
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/health` | Health check para el target group del ALB |
-| `GET` | `/api/v1/ping` | Prueba de vida de la API |
-| `POST` | `/api/v1/llm/complete` | Llama al modelo. Body: `{ "prompt": string, "system"?: string, "maxTokens"?: number }` → `{ text, model, driver }` |
+| `POST` | `/api/v1/jobs` | Sube un `.zip` (campo `repo`, multipart). → `202 { jobId }` |
+| `GET` | `/api/v1/jobs/:id` | Estado del job |
+| `POST` | `/api/v1/llm/complete` | Llama al modelo. Body: `{ "prompt": string, "system"?: string, "maxTokens"?: number }` → `{ text, model }` |
 | `WS`  | `/ws` | Canal WebSocket (responde a `{"type":"ping"}`) |
 
 ## LLM
@@ -29,12 +30,26 @@ curl -s localhost:3000/api/v1/llm/complete \
   -d '{"prompt":"En una frase, ¿qué es un package.json?"}'
 ```
 
+## Base de datos
+
+Con `DB_HOST` definida se usa Postgres (`DB_HOST`/`DB_PORT`/`DB_USER`/
+`DB_PASSWORD`/`DB_NAME`, esquema `DB_SCHEMA`, por defecto `sch_repo_scanner`);
+sin ella, un `JobStore` en memoria.
+
+El proyecto **no crea ni modifica el esquema**: solo se conecta. El modelo de
+datos debe existir en la base **antes** de arrancar. Cárgalo una vez:
+
+```bash
+psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/schema.sql   # o pégalo en Adminer
+```
+
 ## Desarrollo local
 
 ```bash
 nvm use                 # Node 24.15.0
 npm install
 cp .env.example .env
+psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/schema.sql   # una vez
 npm run dev             # http://localhost:3000
 ```
 
