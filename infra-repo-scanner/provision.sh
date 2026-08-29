@@ -104,3 +104,7 @@ curl -fsS -m 40 -X POST "http://${ALB_URL}/api/v1/llm/complete" \
 printf '\n\033[1;32mListo.\033[0m\n'
 echo "  API:      http://${ALB_URL}"
 echo "  Frontend: $(tf frontend_url)"
+echo
+echo "  Falta cargar el esquema en RDS una vez (ver README, sección 'Base de datos'):"
+echo "    terraform apply ... -var db_publicly_accessible=true -var db_admin_cidr=<TU_IP>/32"
+echo "    psql \"\$DB\" -f ../ws-repo-scanner/db/schema.sql  &&  terraform apply ...  # cerrar"

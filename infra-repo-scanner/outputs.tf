@@ -18,6 +18,21 @@ output "backend_ecs_service" {
   value       = module.backend.ecs_service_name
 }
 
+output "database_endpoint" {
+  description = "host:port de la instancia RDS (accesible solo desde la VPC)"
+  value       = module.database.endpoint
+}
+
+output "database_name" {
+  description = "Nombre de la base de datos"
+  value       = module.database.db_name
+}
+
+output "database_secret_arn" {
+  description = "Secreto de Secrets Manager con las credenciales de la DB"
+  value       = module.database.secret_arn
+}
+
 output "frontend_bucket" {
   description = "Bucket S3 que sirve la SPA"
   value       = module.frontend.bucket_name

@@ -65,15 +65,19 @@ resource "aws_iam_role" "task" {
 
 # El valor se define fuera de Terraform: aws secretsmanager put-secret-value
 resource "aws_secretsmanager_secret" "anthropic_api_key" {
-  name        = "${var.name_prefix}/anthropic-api-key"
-  description = "API key de Anthropic para el backend de Code Insight AI"
+  name                    = "${var.name_prefix}/anthropic-api-key"
+  description             = "API key de Anthropic para el backend de Code Insight AI"
+  recovery_window_in_days = 0
 }
 
 data "aws_iam_policy_document" "task_exec_secrets" {
   statement {
-    sid       = "ReadAnthropicApiKey"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.anthropic_api_key.arn]
+    sid     = "ReadRuntimeSecrets"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      aws_secretsmanager_secret.anthropic_api_key.arn,
+      var.db_secret_arn,
+    ]
   }
 }
 
@@ -207,11 +211,25 @@ resource "aws_ecs_task_definition" "this" {
       { name = "NODE_ENV", value = "production" },
       { name = "PORT", value = tostring(var.container_port) },
       { name = "ANTHROPIC_MODEL", value = var.anthropic_model },
+      { name = "DB_HOST", value = var.db_host },
+      { name = "DB_PORT", value = tostring(var.db_port) },
+      { name = "DB_NAME", value = var.db_name },
+      { name = "DB_SCHEMA", value = var.db_schema },
     ]
-    secrets = [{
-      name      = "ANTHROPIC_API_KEY"
-      valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
-    }]
+    secrets = [
+      {
+        name      = "ANTHROPIC_API_KEY"
+        valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
+      },
+      {
+        name      = "DB_USER"
+        valueFrom = "${var.db_secret_arn}:username::"
+      },
+      {
+        name      = "DB_PASSWORD"
+        valueFrom = "${var.db_secret_arn}:password::"
+      },
+    ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {

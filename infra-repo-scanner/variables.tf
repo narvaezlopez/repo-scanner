@@ -71,6 +71,67 @@ variable "anthropic_model" {
   default     = "claude-sonnet-5"
 }
 
+# --- base de datos (RDS PostgreSQL) ---
+variable "db_name" {
+  description = "Nombre de la base de datos"
+  type        = string
+  default     = "repo_scanner"
+}
+
+variable "db_username" {
+  description = "Usuario maestro de la base de datos"
+  type        = string
+  default     = "repo_scanner_app"
+}
+
+variable "db_schema" {
+  description = "Esquema donde vive el modelo (db/schema.sql). El proyecto no lo crea"
+  type        = string
+  default     = "sch_repo_scanner"
+}
+
+variable "db_engine_version" {
+  description = "Versión del engine Postgres (major o major.minor)"
+  type        = string
+  default     = "16"
+}
+
+variable "db_instance_class" {
+  description = "Clase de instancia RDS"
+  type        = string
+  default     = "db.t4g.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "GiB iniciales (autoescala hasta 100)"
+  type        = number
+  default     = 20
+}
+
+variable "db_multi_az" {
+  description = "Alta disponibilidad (encarece x2). Off en dev"
+  type        = bool
+  default     = false
+}
+
+variable "db_deletion_protection" {
+  description = "Impedir el borrado de la instancia"
+  type        = bool
+  default     = false
+}
+
+variable "db_publicly_accessible" {
+  description = "Abrir la DB a internet SOLO para cargar db/schema.sql; revertir después"
+  type        = bool
+  default     = false
+}
+
+variable "db_admin_cidr" {
+  description = "CIDR con acceso temporal a 5432 durante el bootstrap (p.ej. TU_IP/32)"
+  type        = string
+  default     = ""
+}
+
 # --- frontend (S3 + CloudFront) ---
 variable "frontend_dist_path" {
   description = "Ruta local al build de Angular (carpeta browser/) para subir a S3"

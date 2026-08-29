@@ -1,15 +1,40 @@
 # infra-repo-scanner
 
 Infraestructura AWS (Terraform) para desplegar **Code Insight AI**.
-Alcance actual: frontend + backend desplegables. Nada de SQS ni DynamoDB todavía.
+Alcance actual: frontend + backend + base de datos desplegables. Nada de SQS ni DynamoDB todavía.
 
 ## Qué crea
 
 | Módulo | Recursos |
 |---|---|
 | `network` | VPC, 2 subredes públicas + 2 privadas, IGW, 1 NAT Gateway, route tables |
-| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secreto en Secrets Manager para `ANTHROPIC_API_KEY` + permiso de lectura en el rol de ejecución |
+| `database` | RDS PostgreSQL 16 (`db.t4g.micro`, gp3 20→100 GiB, cifrado) en subredes privadas, subnet group, security group (5432 desde la VPC), `random_password` guardado en Secrets Manager (`repo-scanner-dev/database`, JSON) |
+| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secretos en Secrets Manager (`ANTHROPIC_API_KEY` + credenciales de la DB) cableados al contenedor |
 | `frontend` | Bucket S3 privado, CloudFront + Origin Access Control, política de bucket, subida del build de Angular |
+
+## Base de datos
+
+RDS no es público. Terraform genera la contraseña y la deja en el secreto
+`repo-scanner-dev/database` como JSON (`username`, `password`, `host`, `port`,
+`dbname`, `schema`). El contenedor recibe `DB_HOST/DB_PORT/DB_NAME/DB_SCHEMA`
+como env y `DB_USER/DB_PASSWORD` desde ese secreto. El proyecto **no crea el
+esquema**: hay que cargar `../ws-repo-scanner/db/schema.sql` una vez.
+
+Bootstrap del esquema (abrir → cargar → cerrar):
+
+```bash
+MYIP=$(curl -s https://checkip.amazonaws.com)
+terraform apply -var-file=environments/dev.tfvars \
+  -var "db_publicly_accessible=true" -var "db_admin_cidr=${MYIP}/32"
+
+read HOST PORT USER PASS DB < <(aws secretsmanager get-secret-value \
+  --secret-id repo-scanner-dev/database --query SecretString --output text \
+  | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["host"],d["port"],d["username"],d["password"],d["dbname"])')
+
+PGPASSWORD="$PASS" psql -h "$HOST" -p "$PORT" -U "$USER" -d "$DB" -f ../ws-repo-scanner/db/schema.sql
+
+terraform apply -var-file=environments/dev.tfvars   # vuelve a cerrar la DB
+```
 
 ## LLM
 
@@ -30,6 +55,8 @@ aws ecs update-service --cluster repo-scanner-dev-cluster \
 ```
 Internet ──► CloudFront ──► S3 (SPA, privado)
 Internet ──► ALB (HTTP:80) ──► ECS Fargate (API :3000, subredes privadas) ──► NAT ──► Internet
+                                     │
+                                     └──► RDS PostgreSQL (subredes privadas, :5432)
 ```
 
 ## Requisitos
@@ -123,6 +150,7 @@ bloque y ejecuta `terraform init -migrate-state`.
 ## Limitaciones conscientes (siguiente iteración)
 
 - ALB sólo HTTP. HTTPS necesita dominio + certificado ACM.
-- 1 sola tarea ECS y 1 NAT: barato, no HA.
+- 1 sola tarea ECS, 1 NAT y RDS single-AZ: barato, no HA.
+- Carga del esquema manual (abrir/cerrar la DB); en real sería un job en la VPC o un bastion.
 - Sin WAF, sin VPC endpoints, sin autoscaling.
 - El `terraform apply` sube la SPA; en un pipeline real sería `aws s3 sync` + invalidación.

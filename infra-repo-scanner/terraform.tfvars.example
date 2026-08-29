@@ -5,4 +5,9 @@ aws_region  = "us-east-1"
 backend_image_tag     = "latest"
 backend_desired_count = 1
 
+db_instance_class = "db.t4g.micro"
+# solo durante el bootstrap del esquema:
+# db_publicly_accessible = true
+# db_admin_cidr          = "TU_IP/32"
+
 frontend_dist_path = "../web-ui-repo-scanner/dist/web-ui-repo-scanner/browser"

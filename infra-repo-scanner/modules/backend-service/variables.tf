@@ -59,3 +59,24 @@ variable "anthropic_model" {
   type        = string
   default     = "claude-sonnet-5"
 }
+
+variable "db_host" {
+  type = string
+}
+
+variable "db_port" {
+  type = number
+}
+
+variable "db_name" {
+  type = string
+}
+
+variable "db_schema" {
+  type = string
+}
+
+variable "db_secret_arn" {
+  description = "Secreto con las credenciales de la DB (JSON: username, password, ...)"
+  type        = string
+}
