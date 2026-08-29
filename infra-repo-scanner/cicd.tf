@@ -101,6 +101,21 @@ data "aws_iam_policy_document" "cicd_permissions" {
     }
   }
 
+  # update-service --task-definition necesita pasar los roles de la task a ECS
+  statement {
+    sid     = "EcsPassRole"
+    actions = ["iam:PassRole"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.name_prefix}-task-exec",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.name_prefix}-task",
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+
   statement {
     sid       = "S3Sync"
     actions   = ["s3:ListBucket"]
