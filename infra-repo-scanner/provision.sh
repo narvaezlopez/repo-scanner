@@ -62,10 +62,14 @@ fi
 
 aws sts get-caller-identity >/dev/null || die "credenciales AWS no válidas (aws configure)"
 
-# Si ya hay un OIDC provider de GitHub en la cuenta (otro proyecto), no crear otro.
+# Adoptar (no crear) el OIDC provider de GitHub SOLO si ya existe en la cuenta
+# Y Terraform no lo está gestionando ya. Si está en el state, pasar "false" haría
+# que Terraform lo destruyera.
 if aws iam list-open-id-connect-providers \
      --query "OpenIDConnectProviderList[?ends_with(Arn, ':oidc-provider/token.actions.githubusercontent.com')]" \
-     --output text 2>/dev/null | grep -q .; then
+     --output text 2>/dev/null | grep -q . \
+   && ! terraform -chdir="$INFRA_DIR" state list 2>/dev/null \
+        | grep -q 'aws_iam_openid_connect_provider.github'; then
   TF_VARS+=(-var "create_github_oidc_provider=false")
 fi
 

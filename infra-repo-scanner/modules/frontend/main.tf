@@ -19,6 +19,23 @@ resource "aws_s3_bucket_versioning" "site" {
 }
 
 # --- CloudFront ---
+# Reescribe rutas de la SPA a /index.html (deep links de Angular). Solo se
+# asocia al comportamiento por defecto; /api/* y /ws no la ven.
+resource "aws_cloudfront_function" "spa_rewrite" {
+  name    = "${var.name_prefix}-spa-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var uri = event.request.uri;
+      if (uri.indexOf('.') === -1) {
+        event.request.uri = '/index.html';
+      }
+      return event.request;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_origin_access_control" "site" {
   name                              = "${var.name_prefix}-oac"
   origin_access_control_origin_type = "s3"
@@ -38,6 +55,20 @@ resource "aws_cloudfront_distribution" "site" {
     origin_access_control_id = aws_cloudfront_origin_access_control.site.id
   }
 
+  # API detrás del ALB (HTTP). El navegador ve todo bajo el dominio de CloudFront
+  # -> mismo origen, sin CORS y sin URL del backend embebida en la SPA.
+  origin {
+    domain_name = var.api_origin_domain
+    origin_id   = "alb-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   default_cache_behavior {
     target_origin_id       = "s3-site"
     viewer_protocol_policy = "redirect-to-https"
@@ -47,17 +78,37 @@ resource "aws_cloudfront_distribution" "site" {
 
     # AWS managed policy "CachingOptimized"
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_rewrite.arn
+    }
   }
 
-  # SPA: cualquier ruta desconocida devuelve index.html.
-  dynamic "custom_error_response" {
-    for_each = [403, 404]
-    content {
-      error_code            = custom_error_response.value
-      response_code         = 200
-      response_page_path    = "/index.html"
-      error_caching_min_ttl = 10
-    }
+  # /api/* -> ALB, sin cache, reenviando todo (managed policies de AWS).
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    target_origin_id       = "alb-api"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = false
+
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
+    origin_request_policy_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac" # AllViewerExceptHostHeader
+  }
+
+  # /ws -> ALB (WebSocket). Mismas politicas.
+  ordered_cache_behavior {
+    path_pattern           = "/ws"
+    target_origin_id       = "alb-api"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = false
+
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    origin_request_policy_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
   }
 
   restrictions {

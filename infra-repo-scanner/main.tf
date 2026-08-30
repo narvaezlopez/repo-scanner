@@ -58,6 +58,7 @@ module "backend" {
 module "frontend" {
   source = "./modules/frontend"
 
-  name_prefix = local.name_prefix
-  dist_path   = var.frontend_dist_path
+  name_prefix       = local.name_prefix
+  dist_path         = var.frontend_dist_path
+  api_origin_domain = module.backend.alb_dns_name
 }

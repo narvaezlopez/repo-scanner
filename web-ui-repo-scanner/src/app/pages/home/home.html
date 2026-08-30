@@ -3,10 +3,13 @@
     <h1 class="home__header__title">R-Scan</h1>
 </header>
 <div class="home__content">
-    @if (!source()) {
-        <app-landing (source)="onSource($event)"></app-landing>
-    } @else {
-        <app-loading></app-loading>
-        <app-dashboard></app-dashboard>
+    <app-landing (source)="onSource($event)"></app-landing>
+
+    @if (loading()) {
+        <p class="home__status">Subiendo…</p>
+    } @else if (jobId(); as id) {
+        <p class="home__status home__status--ok">Job creado — id: <code>{{ id }}</code></p>
+    } @else if (error(); as message) {
+        <p class="home__status home__status--error" role="alert">{{ message }}</p>
     }
 </div>

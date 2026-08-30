@@ -10,7 +10,7 @@ Alcance actual: frontend + backend + base de datos desplegables. Nada de SQS ni 
 | `network` | VPC, 2 subredes públicas + 2 privadas, IGW, 1 NAT Gateway, route tables |
 | `database` | RDS PostgreSQL 16 (`db.t4g.micro`, gp3 20→100 GiB, cifrado) en subredes privadas, subnet group, security group (5432 desde la VPC), `random_password` guardado en Secrets Manager (`repo-scanner-dev/database`, JSON) |
 | `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secretos en Secrets Manager (`ANTHROPIC_API_KEY` + credenciales de la DB) cableados al contenedor |
-| `frontend` | Bucket S3 privado, CloudFront + Origin Access Control, política de bucket, subida del build de Angular |
+| `frontend` | Bucket S3 privado, CloudFront (orígenes S3 + ALB; `/api/*` y `/ws` van al ALB), Origin Access Control, política de bucket, subida del build de Angular |
 
 ## Base de datos
 
@@ -60,11 +60,16 @@ aws ecs update-service --cluster repo-scanner-dev-cluster \
 ```
 
 ```
-Internet ──► CloudFront ──► S3 (SPA, privado)
-Internet ──► ALB (HTTP:80) ──► ECS Fargate (API :3000, subredes privadas) ──► NAT ──► Internet
-                                     │
-                                     └──► RDS PostgreSQL (subredes privadas, :5432)
+Internet ──► CloudFront ─┬─► S3 (SPA, privado)            [/*]
+                         └─► ALB (HTTP:80) ──► ECS Fargate [/api/*, /ws]
+                                                  │
+                                                  ├─► NAT ──► Internet (LLM, ECR)
+                                                  └─► RDS PostgreSQL (subredes privadas, :5432)
 ```
+
+CloudFront tiene dos orígenes: S3 para la SPA y el ALB para `/api/*` y `/ws`. Así
+el navegador solo habla con el dominio de CloudFront → **mismo origen, sin CORS**
+y sin la URL del backend embebida en la SPA (build de prod usa `apiBaseUrl: ''`).
 
 ## Requisitos
 
