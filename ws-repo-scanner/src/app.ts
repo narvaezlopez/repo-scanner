@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { llm } from './llm/index.js';
 import { jobsRouter } from './adapters/inbound/http/jobs.router.js';
+import type { AnalyzeRepoUseCase } from './core/usecases/analyze-repo.js';
 import type { CreateJobUseCase } from './core/usecases/create-job.js';
 import type { GetJobUseCase } from './core/usecases/get-job.js';
 
@@ -17,6 +18,7 @@ const completeSchema = z.object({
 export interface AppDeps {
   createJob: CreateJobUseCase;
   getJob: GetJobUseCase;
+  analyzeRepo: AnalyzeRepoUseCase;
 }
 
 export function createApp(deps: AppDeps) {
@@ -55,7 +57,14 @@ export function createApp(deps: AppDeps) {
     }
   });
 
-  app.use('/api/v1/jobs', jobsRouter({ createJob: deps.createJob, getJob: deps.getJob }));
+  app.use(
+    '/api/v1/jobs',
+    jobsRouter({
+      createJob: deps.createJob,
+      getJob: deps.getJob,
+      analyzeRepo: deps.analyzeRepo,
+    }),
+  );
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'not_found' });

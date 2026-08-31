@@ -42,7 +42,11 @@ import { PgJobStore } from '../../src/adapters/outbound/persistence/typeorm/pg-j
 import { JobsController } from '../../src/adapters/inbound/http/jobs.controller.js';
 import { CreateJobUseCase } from '../../src/core/usecases/create-job.js';
 import { GetJobUseCase } from '../../src/core/usecases/get-job.js';
+import type { AnalyzeRepoUseCase } from '../../src/core/usecases/analyze-repo.js';
 import { mockRequest, mockResponse } from '../helpers.js';
+
+// El análisis corre en background; para el controller basta un doble que no hace nada.
+const analyzeRepo = { execute: vi.fn().mockResolvedValue(undefined) } as unknown as AnalyzeRepoUseCase;
 
 const zipFile = {
   buffer: Buffer.from('PK fake zip'),
@@ -60,6 +64,7 @@ describe('JobsController', () => {
     controller = new JobsController({
       createJob: new CreateJobUseCase({ store }),
       getJob: new GetJobUseCase({ store }),
+      analyzeRepo,
     });
   });
 

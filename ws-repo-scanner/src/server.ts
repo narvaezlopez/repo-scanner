@@ -9,7 +9,7 @@ import { logger } from './logger.js';
 const container = await compose();
 const app = createApp(container);
 const server = createServer(app);
-attachWebSocket(server);
+attachWebSocket(server, { bus: container.bus, getJob: container.getJob });
 
 server.listen(config.PORT, () => {
   logger.info(`ws-repo-scanner escuchando en :${config.PORT} (${config.NODE_ENV})`);
