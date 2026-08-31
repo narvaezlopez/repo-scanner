@@ -41,7 +41,15 @@ export interface Recommendation {
   priority: 'high' | 'medium' | 'low';
 }
 
+export interface AnalysisOverview {
+  projectName: string;
+  mainLanguage: string;
+  mainFramework: string | null;
+  fileCount: number;
+}
+
 export interface AnalysisResult {
+  overview: AnalysisOverview;
   functionalSummary: string;
   technologies: DetectedTechnology[];
   architecture: InferredArchitecture;

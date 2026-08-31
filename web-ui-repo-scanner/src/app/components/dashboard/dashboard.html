@@ -6,6 +6,25 @@
     <span class="dash__meta">generado por {{ r.model }}</span>
   </header>
 
+  <article class="card dash__overview">
+    <div>
+      <span class="dash__dim">Proyecto</span>
+      <strong>{{ r.overview.projectName }}</strong>
+    </div>
+    <div>
+      <span class="dash__dim">Lenguaje principal</span>
+      <strong>{{ r.overview.mainLanguage }}</strong>
+    </div>
+    <div>
+      <span class="dash__dim">Framework principal</span>
+      <strong>{{ r.overview.mainFramework || '—' }}</strong>
+    </div>
+    <div>
+      <span class="dash__dim">Archivos (aprox.)</span>
+      <strong>{{ r.overview.fileCount }}</strong>
+    </div>
+  </article>
+
   <article class="card">
     <h3>Resumen funcional</h3>
     <p>{{ r.functionalSummary }}</p>

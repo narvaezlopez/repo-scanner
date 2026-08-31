@@ -73,7 +73,15 @@ export interface AnalysisFindings {
   risks: Risk[];
 }
 
+export interface AnalysisOverview {
+  projectName: string;
+  mainLanguage: string;
+  mainFramework: string | null;
+  fileCount: number;
+}
+
 export interface AnalysisResult {
+  overview: AnalysisOverview;
   functionalSummary: string;
   technologies: DetectedTechnology[];
   architecture: InferredArchitecture;

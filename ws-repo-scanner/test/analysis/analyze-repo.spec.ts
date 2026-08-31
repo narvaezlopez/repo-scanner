@@ -71,6 +71,7 @@ describe('readManifests', () => {
 });
 
 describe('parseAnalysisResult', () => {
+  const overview = { projectName: 'demo', mainLanguage: 'TypeScript', mainFramework: null, fileCount: 5 };
   const good = JSON.stringify({
     functionalSummary: 'API de ejemplo',
     technologies: [{ name: 'Express', category: 'framework', evidence: 'package.json' }],
@@ -78,11 +79,12 @@ describe('parseAnalysisResult', () => {
     findings: { components: [], recommendations: [], risks: [] },
   });
 
-  it('acepta JSON envuelto en ```json', () => {
-    const r = parseAnalysisResult('```json\n' + good + '\n```', 'claude-sonnet-5');
+  it('acepta JSON envuelto en ```json y adjunta el overview', () => {
+    const r = parseAnalysisResult('```json\n' + good + '\n```', 'claude-sonnet-5', overview);
     expect(r.architecture.pattern).toBe('n-capas');
     expect(r.model).toBe('claude-sonnet-5');
     expect(r.generatedAt).toMatch(/^\d{4}-/);
+    expect(r.overview).toEqual(overview);
   });
 
   it('normaliza enums desconocidos a un valor por defecto', () => {
@@ -92,14 +94,14 @@ describe('parseAnalysisResult', () => {
       architecture: { pattern: 'raro', confidence: 2, rationale: '', evidence: [] },
       findings: { components: [], recommendations: [], risks: [] },
     });
-    const r = parseAnalysisResult(messy, 'm');
+    const r = parseAnalysisResult(messy, 'm', overview);
     expect(r.technologies[0]?.category).toBe('library');
     expect(r.architecture.pattern).toBe('desconocida');
     expect(r.architecture.confidence).toBe(0.5);
   });
 
   it('lanza si no hay JSON', () => {
-    expect(() => parseAnalysisResult('lo siento, no puedo', 'm')).toThrow();
+    expect(() => parseAnalysisResult('lo siento, no puedo', 'm', overview)).toThrow();
   });
 
   it('recupera un JSON cortado por el límite de tokens', () => {
@@ -108,7 +110,7 @@ describe('parseAnalysisResult', () => {
       "technologies": [
         { "name": "Express", "category": "framework", "evidence": "package.json" },
         { "name": "pg", "category": "database", "evidence": "package`;
-    const r = parseAnalysisResult(truncated, 'claude-sonnet-5');
+    const r = parseAnalysisResult(truncated, 'claude-sonnet-5', overview);
     expect(r.functionalSummary).toBe('API de ejemplo');
     expect(r.technologies[0]?.name).toBe('Express');
     expect(r.technologies.every((t) => t.name)).toBe(true); // nada roto
@@ -158,7 +160,17 @@ describe('AnalyzeRepoUseCase', () => {
 
     const last = updates.at(-1);
     expect(last?.status).toBe('done');
-    expect((last?.result as { architecture: { pattern: string } }).architecture.pattern).toBe('n-capas');
+    const result = last?.result as {
+      architecture: { pattern: string };
+      overview: { projectName: string; mainLanguage: string; mainFramework: string | null; fileCount: number };
+    };
+    expect(result.architecture.pattern).toBe('n-capas');
+    expect(result.overview).toEqual({
+      projectName: 'demo-api',
+      mainLanguage: 'TypeScript',
+      mainFramework: 'Express',
+      fileCount: 5,
+    });
     expect(events.at(-1)?.type).toBe('done');
     expect(events.slice(0, -1).every((e) => e.type === 'progress')).toBe(true);
     expect(events.filter((e) => e.type === 'progress').length).toBeGreaterThanOrEqual(3);

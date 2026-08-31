@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { AnalysisResult } from '../domain/analysis-result.js';
+import type { AnalysisOverview, AnalysisResult } from '../domain/analysis-result.js';
 
 // el LLM a veces manda null en vez de omitir el campo
 const optionalString = z
@@ -92,12 +92,16 @@ const llmSchema = z.object({
     .default({ components: [], recommendations: [], risks: [] }),
 });
 
-// saca el JSON de la respuesta del LLM, lo valida y le añade los metadatos.
+// saca el JSON de la respuesta del LLM, lo valida y le añade overview + metadatos.
 // si no cuaja, lanza -> el job queda en 'error'
-export function parseAnalysisResult(text: string, model: string): AnalysisResult {
+export function parseAnalysisResult(
+  text: string,
+  model: string,
+  overview: AnalysisOverview,
+): AnalysisResult {
   const json = extractJson(text);
   const parsed = llmSchema.parse(json);
-  return { ...parsed, generatedAt: new Date().toISOString(), model };
+  return { overview, ...parsed, generatedAt: new Date().toISOString(), model };
 }
 
 function extractJson(text: string): unknown {

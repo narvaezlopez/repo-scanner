@@ -82,14 +82,37 @@ describe('JobsController', () => {
       );
     });
 
-    it('devuelve 400 si no se adjunta archivo', async () => {
+    it('devuelve 400 si no hay ni archivo ni gitUrl', async () => {
       const { res, state } = mockResponse();
 
       await controller.create(mockRequest({}), res);
 
       expect(state.statusCode).toBe(400);
-      expect(state.body).toMatchObject({ error: 'missing_file' });
+      expect(state.body).toMatchObject({ error: 'missing_source' });
       expect(repo.insert).not.toHaveBeenCalled();
+    });
+
+    it('devuelve 202 con un gitUrl de GitHub válido', async () => {
+      const { res, state } = mockResponse();
+
+      await controller.create(
+        mockRequest({ body: { gitUrl: 'https://github.com/expressjs/cors' } }),
+        res,
+      );
+
+      expect(state.statusCode).toBe(202);
+      expect(state.body).toEqual({ jobId: expect.any(String) });
+      expect(repo.insert).toHaveBeenCalledWith(
+        expect.objectContaining({ sourceKind: 'git', sourceName: 'expressjs/cors' }),
+      );
+    });
+
+    it('devuelve 422 si el gitUrl no es de GitHub', async () => {
+      const { res, state } = mockResponse();
+
+      await controller.create(mockRequest({ body: { gitUrl: 'https://gitlab.com/foo/bar' } }), res);
+
+      expect(state.statusCode).toBe(422);
     });
 
     it('devuelve 415 si el archivo no es .zip', async () => {

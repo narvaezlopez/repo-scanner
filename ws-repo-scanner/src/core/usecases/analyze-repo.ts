@@ -1,4 +1,5 @@
 import { logger } from '../../logger.js';
+import { buildOverview } from '../analysis/overview.js';
 import { parseAnalysisResult } from '../analysis/parse-result.js';
 import { buildUserPrompt, SYSTEM_PROMPT } from '../analysis/prompt.js';
 import { readManifests } from '../analysis/read-manifests.js';
@@ -45,13 +46,15 @@ export class AnalyzeRepoUseCase {
       const manifests = await readManifests(repo.dir, structure.keyFiles);
       await this.report(jobId, 'manifests', 60, `${manifests.length} manifiestos detectados`);
 
+      const overview = buildOverview(structure, manifests, source.name);
+
       await this.report(jobId, 'llm', 80, 'Infiriendo propósito y arquitectura');
       const { text, model } = await this.deps.llm.complete({
         system: SYSTEM_PROMPT,
         prompt: buildUserPrompt(structure, manifests),
         maxTokens: 8192,
       });
-      const result = parseAnalysisResult(text, model);
+      const result = parseAnalysisResult(text, model, overview);
 
       await this.deps.store.update(jobId, {
         status: 'done',

@@ -3,7 +3,9 @@ import { InvalidRepoArchiveError } from '../../../core/domain/errors.js';
 import type { AnalyzeRepoUseCase } from '../../../core/usecases/analyze-repo.js';
 import type { CreateJobUseCase } from '../../../core/usecases/create-job.js';
 import type { GetJobUseCase } from '../../../core/usecases/get-job.js';
+import type { RepoSourcePort } from '../../../core/ports/repo-source.port.js';
 import { ZipSourceAdapter } from '../../outbound/repo-source/zip-source.adapter.js';
+import { GitSourceAdapter } from '../../outbound/repo-source/git-source.adapter.js';
 import { logger } from '../../../logger.js';
 
 export interface JobsControllerDeps {
@@ -28,20 +30,28 @@ export class JobsController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     const file = req.file;
-    if (!file) {
-      res.status(400).json({
-        error: 'missing_file',
-        message: 'Adjunta el repo como campo "repo" (multipart/form-data)',
-      });
-      return;
-    }
-    if (!looksLikeZip(file)) {
-      res.status(415).json({ error: 'unsupported_media_type', message: 'Solo se acepta un archivo .zip' });
-      return;
-    }
+    const gitUrl: unknown = req.body?.gitUrl;
 
+    let source: RepoSourcePort;
     try {
-      const source = new ZipSourceAdapter(file.buffer, file.originalname);
+      if (file) {
+        if (!looksLikeZip(file)) {
+          res
+            .status(415)
+            .json({ error: 'unsupported_media_type', message: 'Solo se acepta un archivo .zip' });
+          return;
+        }
+        source = new ZipSourceAdapter(file.buffer, file.originalname);
+      } else if (typeof gitUrl === 'string' && gitUrl.trim()) {
+        source = new GitSourceAdapter(gitUrl);
+      } else {
+        res.status(400).json({
+          error: 'missing_source',
+          message: 'Envía un .zip en el campo "repo" o un JSON { "gitUrl": "..." }',
+        });
+        return;
+      }
+
       const { jobId } = await this.deps.createJob.execute(source); // crear en la db
       // no esperamos: el análisis va en background, se sigue por GET o WS
       void this.deps.analyzeRepo.execute({ jobId, source });

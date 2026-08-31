@@ -28,6 +28,21 @@
     font-size: 0.85rem;
   }
 
+  &__overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-16);
+
+    div {
+      display: flex;
+      flex-direction: column;
+    }
+
+    strong {
+      font-size: 1.05rem;
+    }
+  }
+
   &__pattern {
     display: flex;
     align-items: center;

@@ -25,6 +25,10 @@ export class RepoScannerApi {
     return this.http.post<CreateJobResponse>(this.base, form);
   }
 
+  createJobFromUrl(gitUrl: string): Observable<CreateJobResponse> {
+    return this.http.post<CreateJobResponse>(this.base, { gitUrl });
+  }
+
   // fallback si el WS se cae
   getJob(id: string): Observable<Job> {
     return this.http.get<Job>(`${this.base}/${id}`);

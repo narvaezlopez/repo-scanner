@@ -25,22 +25,28 @@ export class Home {
   protected onSource(source: RepoSource): void {
     this.errorMsg.set(null);
     this.job.set(null);
+    this.phase.set('uploading');
 
-    if (source.kind !== 'upload') {
-      this.fail('De momento solo se admite subir un archivo .zip.');
-      return;
-    }
-    const zip = source.files.find((f) => f.name.toLowerCase().endsWith('.zip'));
+    const request$ =
+      source.kind === 'git'
+        ? this.api.createJobFromUrl(source.url)
+        : this.pickZip(source.files);
+
+    if (!request$) return;
+
+    request$.subscribe({
+      next: ({ jobId }) => this.watch(jobId),
+      error: (err) => this.fail(err?.error?.message ?? 'No se pudo iniciar el análisis.'),
+    });
+  }
+
+  private pickZip(files: File[]) {
+    const zip = files.find((f) => f.name.toLowerCase().endsWith('.zip'));
     if (!zip) {
       this.fail('Selecciona un archivo .zip.');
-      return;
+      return null;
     }
-
-    this.phase.set('uploading');
-    this.api.createJob(zip).subscribe({
-      next: ({ jobId }) => this.watch(jobId),
-      error: (err) => this.fail(err?.error?.message ?? 'No se pudo subir el repositorio.'),
-    });
+    return this.api.createJob(zip);
   }
 
   protected reset(): void {
