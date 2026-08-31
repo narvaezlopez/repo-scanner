@@ -1,15 +1,36 @@
 <header class="home__header">
-    <img src="icons/r-scanner-logo.png" alt="R-Scan Icon" class="home__header__icon">
-    <h1 class="home__header__title">R-Scan</h1>
+  <img src="icons/r-scanner-logo.png" alt="R-Scan" class="home__header__icon" />
+  <h1 class="home__header__title">R-Scan</h1>
 </header>
-<div class="home__content">
-    <app-landing (source)="onSource($event)"></app-landing>
 
-    @if (loading()) {
-        <p class="home__status">Subiendo…</p>
-    } @else if (jobId(); as id) {
-        <p class="home__status home__status--ok">Job creado — id: <code>{{ id }}</code></p>
-    } @else if (error(); as message) {
-        <p class="home__status home__status--error" role="alert">{{ message }}</p>
+<div class="home__content">
+  @switch (phase()) {
+    @case ('idle') {
+      <app-landing (source)="onSource($event)"></app-landing>
     }
+    @case ('uploading') {
+      <app-loading [progress]="0" step="upload" message="Subiendo el repositorio…"></app-loading>
+    }
+    @case ('analyzing') {
+      <app-loading
+        [progress]="job()?.progress ?? 0"
+        [step]="job()?.step ?? null"
+        [name]="job()?.source?.name ?? ''"
+      ></app-loading>
+    }
+    @case ('done') {
+      @if (job()?.result; as result) {
+        <app-dashboard [result]="result" [name]="job()?.source?.name ?? ''"></app-dashboard>
+      }
+      <div class="home__again">
+        <button type="button" class="btn btn--primary" (click)="reset()">
+          Analizar otro repo
+        </button>
+      </div>
+    }
+    @case ('error') {
+      <p class="home__status home__status--error" role="alert">{{ errorMsg() }}</p>
+      <button type="button" class="btn btn--ghost" (click)="reset()">Volver a intentar</button>
+    }
+  }
 </div>

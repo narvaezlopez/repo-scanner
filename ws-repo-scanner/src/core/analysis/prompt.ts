@@ -1,10 +1,7 @@
 import type { Manifest } from './read-manifests.js';
 import type { RepoStructure } from './scan-structure.js';
 
-/**
- * Instrucciones fijas para el LLM. Le pedimos SOLO un JSON con la forma exacta
- * de AnalysisResult (sin `generatedAt`/`model`, que los pone el código).
- */
+// system prompt: pedimos solo el JSON de AnalysisResult (sin generatedAt/model, que los pone el código)
 export const SYSTEM_PROMPT = `Eres un ingeniero de software senior que hace ingeniería inversa de repositorios.
 A partir de los datos deterministas que te doy (estructura de ficheros y manifiestos ya parseados), infieres el propósito y la arquitectura del proyecto.
 
@@ -46,7 +43,6 @@ Valores permitidos:
 Sé conciso para no exceder el límite de tokens: máximo 8 tecnologías, 8 componentes,
 5 recomendaciones y 5 riesgos; descripciones de 1-2 frases. Cierra bien el JSON.`;
 
-/** Compone el mensaje de usuario a partir de los hechos deterministas. */
 export function buildUserPrompt(structure: RepoStructure, manifests: Manifest[]): string {
   const ext = structure.byExtension
     .map((e) => `${e.ext}:${e.count}`)

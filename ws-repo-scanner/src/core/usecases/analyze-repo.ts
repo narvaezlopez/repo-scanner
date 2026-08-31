@@ -14,13 +14,9 @@ export interface AnalyzeRepoInput {
   source: RepoSourcePort;
 }
 
-/**
- * El motor. Orquesta el análisis de un repo ya encolado:
- *   materialize (descomprimir) -> escanear estructura -> leer manifiestos
- *   -> pedir al LLM propósito+arquitectura -> validar -> guardar el resultado.
- * Emite progreso en cada fase y siempre limpia la carpeta temporal.
- * No lanza: los fallos se guardan en el job (status 'error').
- */
+// orquesta el análisis: descomprime -> escanea -> lee manifiestos -> LLM -> guarda.
+// emite progreso en cada fase, limpia el temporal en finally y nunca lanza
+// (los fallos se guardan en el job como 'error').
 export class AnalyzeRepoUseCase {
   constructor(
     private readonly deps: {
@@ -73,13 +69,11 @@ export class AnalyzeRepoUseCase {
         .catch((e) => logger.error({ e, jobId }, 'no se pudo marcar el job como error'));
       this.deps.progress.emit({ type: 'error', jobId, message });
     } finally {
-      await cleanup().catch(() => {
-        /* la carpeta temporal ya no existe */
-      });
+      await cleanup().catch(() => undefined);
     }
   }
 
-  /** Actualiza el job y emite un evento de progreso en una sola operación. */
+  // actualiza el job + emite el evento de progreso
   private async report(
     jobId: string,
     step: AnalysisStep,

@@ -1,0 +1,136 @@
+.dash {
+  max-width: 880px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-16);
+  gap: var(--space-16);
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-direction: column;
+
+    @media (min-width: 1025px){
+      flex-direction: row;
+    }
+
+    h2 {
+      margin: 0;
+      padding-right: var(--space-8);
+    }
+  }
+
+  &__meta,
+  &__dim {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+  }
+
+  &__pattern {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+
+    strong {
+      color: var(--color-primary);
+      text-transform: capitalize;
+      padding-right: var(--space-8);
+    }
+  }
+
+  &__conf {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+
+  &__tags {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-8) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+
+    li {
+      border: var(--border-width) solid var(--color-border);
+      border-radius: 999px;
+      padding: var(--space-2) var(--space-8);
+      margin: 0 var(--space-6) var(--space-6) 0;
+      font-size: 0.8rem;
+    }
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+      padding: var(--space-6) var(--space-8);
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li + li {
+      padding-top: var(--space-8);
+    }
+
+    p {
+      margin: var(--space-4) 0 0;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16); // separación entre tarjetas del análisis
+
+    @media (max-width: 720px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.card {
+  overflow: scroll;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hard);
+  padding: var(--space-16) var(--space-24);
+
+  h3 {
+    margin: 0 0 var(--space-8);
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 1px var(--space-8);
+  margin-right: var(--space-6);
+  border: 1px solid var(--color-border);
+
+  &--high {
+    background: #ffd7d7;
+  }
+  &--medium {
+    background: #ffe9c7;
+  }
+  &--low {
+    background: #d7f0d7;
+  }
+}

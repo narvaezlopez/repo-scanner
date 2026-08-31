@@ -43,8 +43,7 @@ export class JobsController {
     try {
       const source = new ZipSourceAdapter(file.buffer, file.originalname);
       const { jobId } = await this.deps.createJob.execute(source); // crear en la db
-      // El análisis corre en segundo plano; el cliente sigue el progreso por
-      // GET /api/v1/jobs/:id o por el canal WebSocket.
+      // no esperamos: el análisis va en background, se sigue por GET o WS
       void this.deps.analyzeRepo.execute({ jobId, source });
       res.status(202).json({ jobId });
     } catch (err) {

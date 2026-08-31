@@ -1,9 +1,18 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import type { AnalysisResult } from '../../models/job';
 
 @Component({
-  imports: [],
   selector: 'app-dashboard',
-  styleUrl: './dashboard.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [],
   templateUrl: './dashboard.html',
+  styleUrl: './dashboard.scss',
 })
-export class Dashboard {}
+export class Dashboard {
+  readonly result = input.required<AnalysisResult>();
+  readonly name = input<string>('');
+
+  protected readonly confidencePct = computed(() =>
+    Math.round((this.result().architecture.confidence ?? 0) * 100),
+  );
+}

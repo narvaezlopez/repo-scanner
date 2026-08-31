@@ -2,7 +2,7 @@
   <div class="landing__intro">
     <h2 class="landing__title">Analiza un repositorio</h2>
     <p class="landing__subtitle">
-      Arrastra una carpeta, sube un <code>.zip</code> o pega la URL de un repositorio Git.
+      Sube el <code>.zip</code> de un repositorio o pega la URL de un repositorio Git.
     </p>
   </div>
 
@@ -49,19 +49,15 @@
       </svg>
 
       @if (reading()) {
-        <p class="landing__dropzone-text">Leyendo la carpeta…</p>
+        <p class="landing__dropzone-text">Leyendo el archivo…</p>
       } @else {
         <p class="landing__dropzone-text">
-          <strong>Arrastra una carpeta o un archivo aquí</strong>
+          <strong>Arrastra el <code>.zip</code> aquí</strong>
         </p>
         <div class="landing__pickers">
           <label class="btn btn--ghost">
-            Seleccionar carpeta
-            <input type="file" webkitdirectory hidden (change)="onPick($event)" />
-          </label>
-          <label class="btn btn--ghost">
             Seleccionar archivo
-            <input type="file" accept=".zip,.tar,.tar.gz,.tgz" hidden (change)="onPick($event)" />
+            <input type="file" accept=".zip" hidden (change)="onPick($event)" />
           </label>
         </div>
       }

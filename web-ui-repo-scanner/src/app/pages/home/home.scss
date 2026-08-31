@@ -22,7 +22,12 @@
   }
 
   &__content {
-    height: calc(100vh - 73px);
+    min-height: calc(100vh - 73px);
     background: #D4E5F8;
+  }
+  &__again {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 var(--space-16) var(--space-16) var(--space-16);
   }
 }

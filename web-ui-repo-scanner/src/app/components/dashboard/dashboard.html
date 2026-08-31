@@ -1,1 +1,95 @@
-dashboard works!
+@let r = result();
+
+<section class="dash">
+  <header class="dash__head">
+    <h2>{{ name() || 'Repositorio' }}</h2>
+    <span class="dash__meta">generado por {{ r.model }}</span>
+  </header>
+
+  <article class="card">
+    <h3>Resumen funcional</h3>
+    <p>{{ r.functionalSummary }}</p>
+  </article>
+
+  <article class="card">
+    <h3>Arquitectura inferida</h3>
+    <p class="dash__pattern">
+      <strong>{{ r.architecture.pattern }}</strong>
+      <span class="dash__conf">confianza {{ confidencePct() }}%</span>
+    </p>
+    <p>{{ r.architecture.rationale }}</p>
+    @if (r.architecture.layers?.length) {
+      <ul class="dash__tags">
+        @for (l of r.architecture.layers; track l) {
+          <li>{{ l }}</li>
+        }
+      </ul>
+    }
+    @if (r.architecture.evidence.length) {
+      <details>
+        <summary>Evidencias</summary>
+        <ul>
+          @for (e of r.architecture.evidence; track e) {
+            <li>{{ e }}</li>
+          }
+        </ul>
+      </details>
+    }
+  </article>
+
+  <article class="card">
+    <h3>Tecnologías ({{ r.technologies.length }})</h3>
+    <table class="dash__table">
+      <tbody>
+        @for (t of r.technologies; track t.name) {
+          <tr>
+            <td><strong>{{ t.name }}</strong> @if (t.version) {<span class="dash__dim">{{ t.version }}</span>}</td>
+            <td class="dash__dim">{{ t.category }}</td>
+            <td class="dash__dim">{{ t.evidence }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </article>
+
+  <article class="card">
+    <h3>Componentes identificados ({{ r.findings.components.length }})</h3>
+    <ul class="dash__list">
+      @for (c of r.findings.components; track c.name + c.path) {
+        <li>
+          <strong>{{ c.name }}</strong> <span class="dash__dim">· {{ c.type }} · {{ c.path }}</span>
+          <p>{{ c.responsibility }}</p>
+        </li>
+      }
+    </ul>
+  </article>
+
+  <div class="dash__grid">
+    <article class="card">
+      <h3>Recomendaciones ({{ r.findings.recommendations.length }})</h3>
+      <ul class="dash__list">
+        @for (rec of r.findings.recommendations; track rec.title) {
+          <li>
+            <span class="pill pill--{{ rec.priority }}">{{ rec.priority }}</span>
+            <strong>{{ rec.title }}</strong>
+            <p>{{ rec.description }}</p>
+          </li>
+        }
+      </ul>
+    </article>
+
+    <article class="card">
+      <h3>Riesgos ({{ r.findings.risks.length }})</h3>
+      <ul class="dash__list">
+        @for (risk of r.findings.risks; track risk.title) {
+          <li>
+            <span class="pill pill--{{ risk.severity }}">{{ risk.severity }}</span>
+            <strong>{{ risk.title }}</strong>
+            <p>{{ risk.description }}</p>
+            @if (risk.evidence) {<p class="dash__dim">{{ risk.evidence }}</p>}
+          </li>
+        }
+      </ul>
+    </article>
+  </div>
+</section>

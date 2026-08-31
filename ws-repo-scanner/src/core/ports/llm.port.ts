@@ -9,7 +9,6 @@ export interface LlmResponse {
   model: string;
 }
 
-/** Puerto de salida: "completa este prompt". Lo implementa AnthropicLlmClient. */
 export interface LlmPort {
   complete(req: LlmRequest): Promise<LlmResponse>;
 }

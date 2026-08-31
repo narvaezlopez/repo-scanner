@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { AnalysisResult } from '../domain/analysis-result.js';
 
-// El LLM a veces manda `null` en vez de omitir un opcional o de dar un string vacío.
+// el LLM a veces manda null en vez de omitir el campo
 const optionalString = z
   .string()
   .nullish()
@@ -41,7 +41,7 @@ const componentType = z
 
 const severity = z.enum(['high', 'medium', 'low']).catch('medium');
 
-/** Lo que se le pide al LLM: AnalysisResult sin los metadatos que pone el código. */
+// AnalysisResult sin generatedAt/model, que se añaden abajo
 const llmSchema = z.object({
   functionalSummary: z.string().min(1),
   technologies: z
@@ -92,11 +92,8 @@ const llmSchema = z.object({
     .default({ components: [], recommendations: [], risks: [] }),
 });
 
-/**
- * Extrae el JSON de la respuesta del LLM (quita fences, recorta al primer/último
- * `{`), lo valida contra el esquema y añade los metadatos. Si nada de esto cuaja,
- * lanza — y el job pasa a estado 'error'.
- */
+// saca el JSON de la respuesta del LLM, lo valida y le añade los metadatos.
+// si no cuaja, lanza -> el job queda en 'error'
 export function parseAnalysisResult(text: string, model: string): AnalysisResult {
   const json = extractJson(text);
   const parsed = llmSchema.parse(json);
@@ -115,7 +112,7 @@ function extractJson(text: string): unknown {
   try {
     return JSON.parse(stripTrailingCommas(candidate));
   } catch {
-    // Respuesta probablemente cortada por el límite de tokens: cerrar lo que quede abierto.
+    // seguramente cortado por el límite de tokens: intentar cerrarlo
     const repaired = stripTrailingCommas(closeTruncated(s));
     try {
       return JSON.parse(repaired);
@@ -129,11 +126,7 @@ function stripTrailingCommas(s: string): string {
   return s.replace(/,\s*([}\]])/g, '$1');
 }
 
-/**
- * Repara un JSON cortado a medias por el límite de tokens: recorta hasta el último
- * elemento completo (cierre de bracket o coma en cualquier nivel) y cierra los
- * `{`/`[` que quedaran abiertos en ese punto.
- */
+// recorta el JSON al último elemento completo y cierra los { / [ que quedaron abiertos
 function closeTruncated(s: string): string {
   const stack: string[] = [];
   let inString = false;

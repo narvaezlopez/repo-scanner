@@ -19,7 +19,7 @@ const IGNORED_DIRS = new Set([
   '.terraform',
 ]);
 
-/** Ficheros que revelan stack o propósito; se listan y algunos se leen para el LLM. */
+// ficheros que revelan stack/propósito: se listan y algunos se leen para el LLM
 const KEY_FILE_RE =
   /^(readme[^/]*|license[^/]*|dockerfile[^/]*|docker-compose\.ya?ml|makefile|procfile|\.env\.example|package\.json|tsconfig[^/]*\.json|angular\.json|nx\.json|next\.config\.[jt]s|vite\.config\.[jt]s|nest-cli\.json|requirements\.txt|pyproject\.toml|setup\.py|pipfile|pom\.xml|build\.gradle[^/]*|settings\.gradle[^/]*|go\.mod|cargo\.toml|[^/]*\.csproj|[^/]*\.sln|composer\.json|gemfile|[^/]*\.tf|serverless\.ya?ml|openapi\.ya?ml|swagger\.ya?ml)$/i;
 
@@ -44,26 +44,17 @@ const MAX_READ_BYTES = 8_000;
 export interface RepoStructure {
   fileCount: number;
   totalBytes: number;
-  /** Extensiones más frecuentes (top 15), ordenadas por número de ficheros. */
   byExtension: Array<{ ext: string; count: number }>;
-  /** Entradas de la raíz del repo (carpetas y ficheros). */
   topLevelEntries: string[];
-  /** Árbol de carpetas (rutas relativas, hasta profundidad 4). Señal clave para la arquitectura. */
-  directories: string[];
-  /** Rutas relativas de los ficheros "clave" encontrados. */
+  directories: string[]; // árbol de carpetas: la mejor señal para inferir la arquitectura
   keyFiles: string[];
-  /** Contenido (truncado) de los ficheros clave legibles. */
   keyFileContents: Array<{ path: string; content: string }>;
 }
 
 const MAX_DIRS = 250;
 const DIR_TREE_DEPTH = 4;
 
-/**
- * Recorre el repo extraído y saca un resumen determinista: cuántos ficheros,
- * de qué tipo, qué hay en la raíz y el contenido de los ficheros clave.
- * No interpreta nada — eso es trabajo del LLM.
- */
+// recorrido determinista del repo: qué hay, de qué tipo, y el contenido de los ficheros clave
 export async function scanStructure(dir: string): Promise<RepoStructure> {
   const extCount = new Map<string, number>();
   const keyFiles: string[] = [];

@@ -15,19 +15,13 @@ export type ManifestKind =
   | 'other';
 
 export interface Manifest {
-  /** Ruta relativa dentro del repo. */
   path: string;
   kind: ManifestKind;
-  /** Hechos extraídos, ya normalizados (deps, scripts, imágenes base…). */
   facts: Record<string, unknown>;
 }
 
-/**
- * Lee y parsea los manifiestos de build encontrados por scanStructure.
- * Cada parser saca hechos concretos (nombres de dependencias, scripts, imágenes
- * base, providers de Terraform…) para dar señal fiable al LLM sin gastar tokens
- * en volcar ficheros enteros.
- */
+// parsea los manifiestos que localizó scanStructure y saca hechos concretos
+// (deps, scripts, imágenes base...) para no mandarle ficheros enteros al LLM
 export async function readManifests(dir: string, keyFiles: string[]): Promise<Manifest[]> {
   const out: Manifest[] = [];
 

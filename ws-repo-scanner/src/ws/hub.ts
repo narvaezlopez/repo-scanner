@@ -9,21 +9,15 @@ export interface WsDeps {
   getJob: GetJobUseCase;
 }
 
-/**
- * Canal WebSocket en /ws. Solo transporta eventos: no sabe qué es un análisis.
- *
- * Protocolo:
- *   cliente -> { "type": "subscribe", "jobId": "..." }
- *   servidor -> { "type": "snapshot", "job": {...} }        (estado actual)
- *   servidor -> { "type": "progress" | "done" | "error", ... }  (según avanza)
- */
+// /ws — solo transporta eventos, no sabe qué es un análisis.
+// cliente: { type:'subscribe', jobId }  ->  servidor: snapshot + progress/done/error
 export function attachWebSocket(server: Server, deps: WsDeps): WebSocketServer {
   const wss = new WebSocketServer({ server, path: '/ws' });
 
-  // jobId -> sockets suscritos a ese job.
+  // jobId -> sockets suscritos
   const subscribers = new Map<string, Set<WebSocket>>();
 
-  // Una sola suscripción al bus; reparte cada evento a los sockets de su jobId.
+  // una sola escucha del bus; reparte cada evento a los sockets de su jobId
   deps.bus.subscribe((event) => {
     const sockets = subscribers.get(event.jobId);
     if (!sockets?.size) return;

@@ -26,8 +26,7 @@ describe('ZipSourceAdapter', () => {
   });
 
   it('rechaza rutas con path traversal (zip-slip)', async () => {
-    // Fixture creado con python zipfile: contiene la entrada "../escape.txt".
-    // (adm-zip normaliza los nombres al escribir, así que no se puede generar desde su API.)
+    // zip con la entrada "../escape.txt", hecho con python (adm-zip normaliza los nombres al escribir)
     const ZIP_SLIP_B64 =
       'UEsDBBQAAAAIABpnHV1+UwTZBwAAAAUAAAANAAAALi4vZXNjYXBlLnR4dCsoz0tNAQBQSwMEFAAAAAgAGmcdXZJUqb4GAAAABAAAAAYAAABvay50eHRLy8xLBQBQSwECFAMUAAAACAAaZx1dflME2QcAAAAFAAAADQAAAAAAAAAAAAAAgAEAAAAALi4vZXNjYXBlLnR4dFBLAQIUAxQAAAAIABpnHV2SVKm+BgAAAAQAAAAGAAAAAAAAAAAAAACAATIAAABvay50eHRQSwUGAAAAAAIAAgBvAAAAXAAAAAAA';
 
