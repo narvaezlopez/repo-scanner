@@ -18,6 +18,8 @@ build/
 **/.env.*
 !**/.env.example
 *.pem
+*firebase*service*account*.json
+*-adminsdk-*.json
 
 # Terraform
 **/.terraform/

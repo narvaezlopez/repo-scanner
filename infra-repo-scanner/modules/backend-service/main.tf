@@ -70,19 +70,28 @@ resource "aws_secretsmanager_secret" "anthropic_api_key" {
   recovery_window_in_days = 0
 }
 
+# JSON del service account de Firebase Admin (verifica los ID token del frontend).
+# El valor se carga fuera de Terraform con aws secretsmanager put-secret-value.
+resource "aws_secretsmanager_secret" "firebase_service_account" {
+  name                    = "${var.name_prefix}/firebase-service-account"
+  description             = "Service account de Firebase Admin para verificar tokens de autenticación"
+  recovery_window_in_days = 0
+}
+
 data "aws_iam_policy_document" "task_exec_secrets" {
   statement {
     sid     = "ReadRuntimeSecrets"
     actions = ["secretsmanager:GetSecretValue"]
     resources = [
       aws_secretsmanager_secret.anthropic_api_key.arn,
+      aws_secretsmanager_secret.firebase_service_account.arn,
       var.db_secret_arn,
     ]
   }
 }
 
 resource "aws_iam_role_policy" "task_exec_secrets" {
-  name   = "read-anthropic-secret"
+  name   = "read-runtime-secrets"
   role   = aws_iam_role.task_execution.id
   policy = data.aws_iam_policy_document.task_exec_secrets.json
 }
@@ -216,11 +225,17 @@ resource "aws_ecs_task_definition" "this" {
       { name = "DB_NAME", value = var.db_name },
       { name = "DB_SCHEMA", value = var.db_schema },
       { name = "DB_SSL", value = "true" },
+      # Poner en "true" cuando el frontend ya envíe el token de Firebase.
+      { name = "AUTH_ENABLED", value = var.auth_enabled ? "true" : "false" },
     ]
     secrets = [
       {
         name      = "ANTHROPIC_API_KEY"
         valueFrom = aws_secretsmanager_secret.anthropic_api_key.arn
+      },
+      {
+        name      = "FIREBASE_SERVICE_ACCOUNT"
+        valueFrom = aws_secretsmanager_secret.firebase_service_account.arn
       },
       {
         name      = "DB_USER"

@@ -1,3 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 75vh;
+  padding-block: var(--space-32);
+  box-sizing: border-box;
+}
+
 .landing {
   display: flex;
   flex-direction: column;
@@ -7,7 +16,7 @@
 
   @media (min-width: 1025px) {
     width: 564px;
-    margin: auto;
+    margin: 0 auto;
   }
 
   > * + * {
@@ -16,6 +25,16 @@
 
   &__intro {
     text-align: center;
+  }
+
+  &__welcome {
+    margin: 0 0 var(--space-8);
+    color: var(--color-muted);
+    font-size: 0.95rem;
+
+    strong {
+      color: var(--color-text);
+    }
   }
 
   &__title {

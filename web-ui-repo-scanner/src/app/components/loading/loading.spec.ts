@@ -1,5 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { Loading } from './loading';
+
+vi.mock('lottie-web', () => ({
+  default: { loadAnimation: () => ({ addEventListener: () => {}, destroy: () => {} }) },
+}));
 
 describe('Loading', () => {
   let component: Loading;

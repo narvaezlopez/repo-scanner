@@ -25,6 +25,13 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-sonnet-5'),
   LLM_MAX_TOKENS: z.coerce.number().default(1024),
+
+  FIREBASE_SERVICE_ACCOUNT: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_FILE: z.string().optional(),
+  AUTH_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export const config = schema.parse(process.env);

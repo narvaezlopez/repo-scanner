@@ -53,6 +53,8 @@ module "backend" {
   db_name       = var.db_name
   db_schema     = var.db_schema
   db_secret_arn = module.database.secret_arn
+
+  auth_enabled = var.auth_enabled
 }
 
 module "frontend" {

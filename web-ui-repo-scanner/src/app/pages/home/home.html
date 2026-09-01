@@ -1,12 +1,18 @@
 <header class="home__header">
   <img src="icons/r-scanner-logo.png" alt="R-Scan" class="home__header__icon" />
   <h1 class="home__header__title">R-Scan</h1>
+  @if (user()) {
+    <button type="button" class="btn home__header__logout" (click)="logout()">Salir</button>
+  }
 </header>
 
 <div class="home__content">
   @switch (phase()) {
     @case ('idle') {
-      <app-landing (source)="onSource($event)"></app-landing>
+      <app-landing
+        [welcome]="user()?.displayName || user()?.email || ''"
+        (source)="onSource($event)"
+      ></app-landing>
     }
     @case ('uploading') {
       <app-loading [progress]="0" step="upload" message="Subiendo el repositorio…"></app-loading>

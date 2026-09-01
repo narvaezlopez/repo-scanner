@@ -3,6 +3,12 @@ import { Dashboard } from './dashboard';
 import type { AnalysisResult } from '../../models/job';
 
 const result: AnalysisResult = {
+  overview: {
+    projectName: 'demo',
+    mainLanguage: 'TypeScript',
+    mainFramework: 'Express',
+    fileCount: 12,
+  },
   functionalSummary: 'API de ejemplo',
   technologies: [{ name: 'Express', category: 'framework', evidence: 'package.json' }],
   architecture: { pattern: 'hexagonal', confidence: 0.8, rationale: 'ports/adapters', evidence: [] },

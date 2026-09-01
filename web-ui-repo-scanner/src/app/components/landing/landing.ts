@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import type { RepoSource } from '../../models/repo-source';
 
 interface Selection {
@@ -15,6 +15,7 @@ interface Selection {
   styleUrl: './landing.scss',
 })
 export class Landing {
+  readonly welcome = input<string>('');
   readonly source = output<RepoSource>();
 
   protected readonly dragging = signal(false);

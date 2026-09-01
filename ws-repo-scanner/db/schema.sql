@@ -15,3 +15,12 @@ CREATE TABLE IF NOT EXISTS sch_repo_scanner.jobs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON sch_repo_scanner.jobs (status);
+
+CREATE TABLE IF NOT EXISTS sch_repo_scanner.users (
+  id           uuid         PRIMARY KEY,
+  firebase_uid varchar(128) NOT NULL,
+  email        varchar(320) NOT NULL,
+  created_at   timestamptz  NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_firebase_uid ON sch_repo_scanner.users (firebase_uid);

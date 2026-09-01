@@ -1,9 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { Landing } from '../../components/landing/landing';
 import { Loading } from '../../components/loading/loading';
 import { Dashboard } from '../../components/dashboard/dashboard';
 import { RepoScannerApi } from '../../services/api';
+import { AuthService } from '../../services/auth';
 import type { Job } from '../../models/job';
 import type { RepoSource } from '../../models/repo-source';
 
@@ -17,10 +19,18 @@ type Phase = 'idle' | 'uploading' | 'analyzing' | 'done' | 'error';
 })
 export class Home {
   private readonly api = inject(RepoScannerApi);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
+  protected readonly user = this.auth.user;
   protected readonly phase = signal<Phase>('idle');
   protected readonly job = signal<Job | null>(null);
   protected readonly errorMsg = signal<string | null>(null);
+
+  protected async logout(): Promise<void> {
+    await this.auth.logout();
+    void this.router.navigate(['/login']);
+  }
 
   protected onSource(source: RepoSource): void {
     this.errorMsg.set(null);

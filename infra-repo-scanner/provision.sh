@@ -34,6 +34,7 @@ NAME_PREFIX="${PROJECT}-${ENVIRONMENT}"
 ECS_CLUSTER="${NAME_PREFIX}-cluster"
 ECS_SERVICE="${NAME_PREFIX}-svc"
 SECRET_ANTHROPIC="${NAME_PREFIX}/anthropic-api-key"
+SECRET_FIREBASE="${NAME_PREFIX}/firebase-service-account"
 SECRET_DB="${NAME_PREFIX}/database"
 SCHEMA_FILE="$REPO_ROOT/ws-repo-scanner/db/schema.sql"
 
@@ -110,6 +111,19 @@ aws secretsmanager put-secret-value \
   --secret-id "$SECRET_ANTHROPIC" --secret-string "$ANTHROPIC_API_KEY" \
   --region "$AWS_REGION" >/dev/null
 
+# --- 4b. Service account de Firebase -> Secrets Manager ---
+# Ruta del JSON descargado de Firebase (Project settings > Service accounts).
+# Se toma de FIREBASE_SA_FILE o, por defecto, de ws-repo-scanner/firebase-service-account.json
+FIREBASE_SA_FILE="${FIREBASE_SA_FILE:-$REPO_ROOT/ws-repo-scanner/firebase-service-account.json}"
+if [[ -f "$FIREBASE_SA_FILE" ]]; then
+  step "Guardando el service account de Firebase en Secrets Manager ($SECRET_FIREBASE)"
+  aws secretsmanager put-secret-value \
+    --secret-id "$SECRET_FIREBASE" --secret-string "file://${FIREBASE_SA_FILE}" \
+    --region "$AWS_REGION" >/dev/null
+else
+  step "Service account de Firebase: omitido (no hay $FIREBASE_SA_FILE ni FIREBASE_SA_FILE exportado)"
+fi
+
 # --- 5. carga de db/schema.sql en RDS (ECS run-task dentro de la VPC) ---
 if [[ "${SKIP_DB_BOOTSTRAP:-}" == "1" ]]; then
   step "Carga del esquema: omitida (SKIP_DB_BOOTSTRAP=1)"
@@ -162,7 +176,7 @@ fi
 
 # --- 8. smoke test ---
 step "Smoke test"
-curl -fsS -m 15 "http://${ALB_URL}/health" && echo
+curl -fsS -m 15 "${ALB_URL}/health" && echo
 
 ZIP="$(mktemp -d)/smoke.zip"
 python3 - "$ZIP" <<'PY'
@@ -173,15 +187,15 @@ z.writestr("src/index.js", "console.log('hi')")
 z.close()
 PY
 
-code="$(curl -s -o /tmp/smoke_job.json -w '%{http_code}' -m 30 -F "repo=@${ZIP}" "http://${ALB_URL}/api/v1/jobs")"
+code="$(curl -s -o /tmp/smoke_job.json -w '%{http_code}' -m 30 -F "repo=@${ZIP}" "${ALB_URL}/api/v1/jobs")"
 if [[ "$code" == 202 ]]; then
   JID="$(jq -r .jobId /tmp/smoke_job.json)"
   echo "  POST /api/v1/jobs -> 202 ($JID)"
-  curl -fsS -m 15 "http://${ALB_URL}/api/v1/jobs/${JID}" && echo
+  curl -fsS -m 15 "${ALB_URL}/api/v1/jobs/${JID}" && echo
 else
   warn "POST /api/v1/jobs -> $code  (¿esquema sin cargar? revisa: aws logs tail /ecs/${NAME_PREFIX})"
 fi
 
 printf '\n\033[1;32mListo.\033[0m\n'
-echo "  API:      http://${ALB_URL}"
+echo "  API:      ${ALB_URL}"
 echo "  Frontend: $(tf frontend_url)"

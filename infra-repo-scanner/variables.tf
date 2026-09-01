@@ -71,6 +71,12 @@ variable "anthropic_model" {
   default     = "claude-sonnet-5"
 }
 
+variable "auth_enabled" {
+  description = "Exigir token de Firebase en el backend (activar cuando el frontend ya lo envíe)"
+  type        = bool
+  default     = false
+}
+
 # --- base de datos (RDS PostgreSQL) ---
 variable "db_name" {
   description = "Nombre de la base de datos"

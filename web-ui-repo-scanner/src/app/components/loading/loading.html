@@ -2,8 +2,7 @@
   <h2 class="loading__title">Analizando @if (name()) {<span>{{ name() }}</span>}</h2>
   <p class="loading__label">{{ label() }}</p>
 
-  <div class="loading__bar" role="progressbar" [attr.aria-valuenow]="pct()">
-    <div class="loading__bar-fill" [style.width.%]="pct()"></div>
-  </div>
-  <p class="loading__pct">{{ pct() }}%</p>
+  <div #anim class="loading__anim" aria-hidden="true"></div>
+
+  <p class="loading__pct" role="progressbar" [attr.aria-valuenow]="pct()">{{ pct() }}%</p>
 </section>

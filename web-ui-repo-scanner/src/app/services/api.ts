@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth';
 import type { AnalysisResult, Job } from '../models/job';
 
 export interface CreateJobResponse {
@@ -17,6 +18,7 @@ type WsMessage =
 @Injectable({ providedIn: 'root' })
 export class RepoScannerApi {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly base = `${environment.apiBaseUrl}/api/v1/jobs`;
 
   createJob(zip: File): Observable<CreateJobResponse> {
@@ -42,7 +44,10 @@ export class RepoScannerApi {
       let job: Job = skeleton(jobId);
       let settled = false;
 
-      ws.onopen = () => ws.send(JSON.stringify({ type: 'subscribe', jobId }));
+      ws.onopen = async () => {
+        const token = await this.auth.getToken();
+        ws.send(JSON.stringify({ type: 'subscribe', jobId, token }));
+      };
 
       ws.onmessage = (ev) => {
         let msg: WsMessage;

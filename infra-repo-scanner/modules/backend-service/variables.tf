@@ -80,3 +80,9 @@ variable "db_secret_arn" {
   description = "Secreto con las credenciales de la DB (JSON: username, password, ...)"
   type        = string
 }
+
+variable "auth_enabled" {
+  description = "Exigir token de Firebase en /api/v1/jobs y /ws"
+  type        = bool
+  default     = false
+}
