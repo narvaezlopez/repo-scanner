@@ -11,7 +11,6 @@ import { logger } from './logger.js';
 import { llm } from './llm/index.js';
 import { jobsRouter } from './adapters/inbound/http/jobs.router.js';
 import { requireAuth } from './adapters/inbound/http/require-auth.js';
-import { meHandler } from './adapters/inbound/http/auth.controller.js';
 import type { AnalyzeRepoUseCase } from './core/usecases/analyze-repo.js';
 import type { CreateJobUseCase } from './core/usecases/create-job.js';
 import type { GetJobUseCase } from './core/usecases/get-job.js';
@@ -55,8 +54,6 @@ export function createApp(deps: AppDeps) {
   const auth: RequestHandler = deps.authenticate
     ? requireAuth(deps.authenticate, config.AUTH_ENABLED ? 'required' : 'optional')
     : (_req: Request, _res: Response, next: NextFunction) => next();
-
-  app.get('/api/v1/auth/me', auth, meHandler);
 
   app.post('/api/v1/llm/complete', async (req: Request, res: Response) => {
     const parsed = completeSchema.safeParse(req.body);
