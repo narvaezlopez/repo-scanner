@@ -128,7 +128,7 @@ else
 
   TASK_ARN="$(aws ecs run-task --cluster "$ECS_CLUSTER" --task-definition "$NAME_PREFIX" \
     --launch-type FARGATE --region "$AWS_REGION" \
-    --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=DISABLED}" \
+    --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=ENABLED}" \
     --overrides "$OVERRIDES" --query 'tasks[0].taskArn' --output text)"
   [[ -n "$TASK_ARN" && "$TASK_ARN" != "None" ]] || die "no se pudo lanzar la task de carga"
 

@@ -249,10 +249,13 @@ resource "aws_ecs_service" "this" {
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
+  # La tarea va en subred pública con IP propia: sale a internet directo
+  # (API de Anthropic, ECR, Secrets) sin NAT Gateway. El ingress sigue
+  # restringido al SG del ALB, así que no queda expuesta.
   network_configuration {
-    subnets          = var.private_subnet_ids
+    subnets          = var.public_subnet_ids
     security_groups  = [aws_security_group.service.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
