@@ -1,0 +1,14 @@
+<section class="login">
+  <div class="login__card">
+    <h1 class="login__title">R-Scan</h1>
+    <p class="login__sub">Entra para analizar un repositorio</p>
+
+    <button type="button" class="btn btn--primary login__google" (click)="google()" [disabled]="busy()">
+      Continuar con Google
+    </button>
+
+    @if (error()) {
+      <p class="login__error" role="alert">{{ error() }}</p>
+    }
+  </div>
+</section>
