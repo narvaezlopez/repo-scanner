@@ -1,59 +1,73 @@
-# WebUiRepoScanner
+# web-ui-repo-scanner
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+SPA de **Code Insight AI**. Angular 22, componentes standalone + `signals`
+(sin `NgModule`, sin RxJS de más — solo donde el WebSocket lo pide).
 
-## Development server
+## Pantallas
 
-To start a local development server, run:
+| Ruta | Componente | Qué hace |
+|---|---|---|
+| `/login` | `pages/login` | Login con Google vía Firebase Auth |
+| `/` | `pages/home` | Carga de repo + progreso en vivo + dashboard de resultados. Protegida por `authGuard` |
 
-```bash
-ng serve
-```
+`home` es una sola página con 3 estados según la fase del análisis:
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **`components/landing`** — formulario de entrada: URL de Git pública o ZIP
+- **`components/loading`** — barra de progreso + mensaje por fase, con
+  animación (`lottie-web`); el porcentaje llega en tiempo real por WebSocket
+- **`components/dashboard`** — resultado: resumen funcional, tecnologías
+  detectadas, arquitectura inferida (patrón + confianza + evidencia),
+  componentes identificados, recomendaciones y riesgos
 
-## Code scaffolding
+## Autenticación
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+`services/auth.ts` envuelve el SDK de Firebase (`signInWithPopup` +
+`GoogleAuthProvider`). El login pasa directo del navegador a Firebase — el
+backend nunca lo ve. `guards/auth.guard.ts` bloquea `/` si no hay sesión.
+`interceptors/auth.interceptor.ts` agrega el ID token de Firebase como
+`Authorization: Bearer` a toda llamada a `/api/v1/*`, y ante un `401` cierra
+sesión y redirige a `/login`.
 
-```bash
-ng generate component component-name
-```
+## Consumo de la API
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`services/api.ts`:
 
-```bash
-ng generate --help
-```
+- `createJob(zip)` / `createJobFromUrl(gitUrl)` → `POST /api/v1/jobs`
+- `getJob(id)` → `GET /api/v1/jobs/:id` (fallback si el WebSocket se cae)
+- `watchJob(jobId)` → abre `/ws`, manda `{ type: 'subscribe', jobId, token }`
+  y emite el `Job` actualizado en cada evento (`snapshot` / `progress` /
+  `done` / `error`) hasta que el análisis termina o falla
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+## Desarrollo local
 
 ```bash
-ng e2e
+nvm use                 # o Node 24
+npm install
+npm start                # http://localhost:4200 — apunta a localhost:3000 (ver src/environments/environment.ts)
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Requiere el backend (`ws-repo-scanner`) corriendo aparte. Config de Firebase y
+URLs de API/WS están en `src/environments/` (`environment.ts` para dev,
+`environment.production.ts` para el build — vacío en prod porque CloudFront
+enruta `/api/*` y `/ws` al mismo origen, sin CORS).
 
-## Additional Resources
+## Build
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm run build            # dist/web-ui-repo-scanner/
+```
+
+En AWS, el build se sube a S3 y se sirve por CloudFront (ver
+[`../infra-repo-scanner/README.md`](../infra-repo-scanner/README.md)).
+
+## Tests
+
+```bash
+npm test                 # Vitest
+```
+
+## Despliegue
+
+Ver [`../infra-repo-scanner/README.md`](../infra-repo-scanner/README.md) —
+`Angular → S3 + CloudFront`, con una CloudFront Function para el rewrite de
+rutas de la SPA (deep links de Angular Router).

@@ -9,7 +9,7 @@ Alcance actual: frontend + backend + base de datos desplegables. Nada de SQS ni 
 |---|---|
 | `network` | VPC, 2 subredes públicas + 2 privadas, IGW, 1 NAT Gateway, route tables |
 | `database` | RDS PostgreSQL 16 (`db.t4g.micro`, gp3 20→100 GiB, cifrado) en subredes privadas, subnet group, security group (5432 desde la VPC), `random_password` guardado en Secrets Manager (`repo-scanner-dev/database`, JSON) |
-| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secretos en Secrets Manager (`ANTHROPIC_API_KEY` + credenciales de la DB) cableados al contenedor |
+| `backend-service` | ECR, cluster ECS, servicio Fargate, ALB + target group (`/health`), security groups, log group, roles IAM, secretos en Secrets Manager (`ANTHROPIC_API_KEY`, credenciales de la DB y `firebase-service-account`) cableados al contenedor, variable `AUTH_ENABLED` |
 | `frontend` | Bucket S3 privado, CloudFront (orígenes S3 + ALB; `/api/*` y `/ws` van al ALB), Origin Access Control, política de bucket, subida del build de Angular |
 
 ## Base de datos
