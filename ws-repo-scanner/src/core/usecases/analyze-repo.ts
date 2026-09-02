@@ -52,7 +52,7 @@ export class AnalyzeRepoUseCase {
       // restante (30-95%) y lo vamos llenando con el progreso real del streaming
       const LLM_START = 30;
       const LLM_END = 95;
-      await this.report(jobId, 'llm', LLM_START, 'Infiriendo propósito y arquitectura');
+      await this.report(jobId, 'llm', LLM_START, 'Analizando propósito y arquitectura');
 
       let lastLlmPct = LLM_START;
       let pendingReport: Promise<void> = Promise.resolve();

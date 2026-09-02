@@ -27,9 +27,7 @@ export class AnthropicLlmClient implements LlmClient {
       }
     };
 
-    // red de seguridad: si el modelo tarda en mandar texto (arranque lento, "pensando"),
-    // igual da la sensación de avance en vez de quedarse pegado
-    const heartbeat = setInterval(() => report(reported + 0.03), 1500);
+    const heartbeat = setInterval(() => report(reported + (0.97 - reported) * 0.05), 1500);
 
     try {
       const stream = this.getClient().messages.stream({

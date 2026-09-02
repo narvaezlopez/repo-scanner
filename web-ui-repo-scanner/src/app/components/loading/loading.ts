@@ -15,7 +15,7 @@ const STEP_LABEL: Record<string, string> = {
   upload: 'Subiendo el repositorio…',
   structure: 'Analizando la estructura de carpetas…',
   manifests: 'Leyendo los manifiestos (package.json, Dockerfile…)…',
-  llm: 'Infiriendo el propósito y la arquitectura…',
+  llm: 'Analizando el propósito y la arquitectura…',
   done: 'Finalizando…',
 };
 
