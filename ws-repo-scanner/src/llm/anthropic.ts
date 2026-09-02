@@ -14,21 +14,47 @@ export class AnthropicLlmClient implements LlmClient {
   }
 
   async complete(input: LlmCompleteInput): Promise<LlmResult> {
-    const response = await this.getClient().messages.create({
-      model: config.ANTHROPIC_MODEL,
-      max_tokens: input.maxTokens ?? config.LLM_MAX_TOKENS,
-      system: input.system,
-      messages: [{ role: 'user', content: input.prompt }],
-    });
+    const maxTokens = input.maxTokens ?? config.LLM_MAX_TOKENS;
+    // heurística ~4 caracteres/token para estimar cuánto falta mientras llega el streaming
+    const approxMaxChars = maxTokens * 4;
 
-    const text = response.content
-      .filter(
-        (block): block is Extract<typeof block, { type: 'text' }> =>
-          block.type === 'text',
-      )
-      .map((block) => block.text)
-      .join('\n');
+    let reported = 0;
+    const report = (ratio: number): void => {
+      const next = Math.max(reported, Math.min(0.97, ratio));
+      if (next > reported) {
+        reported = next;
+        input.onProgress?.(next);
+      }
+    };
 
-    return { text, model: config.ANTHROPIC_MODEL };
+    // red de seguridad: si el modelo tarda en mandar texto (arranque lento, "pensando"),
+    // igual da la sensación de avance en vez de quedarse pegado
+    const heartbeat = setInterval(() => report(reported + 0.03), 1500);
+
+    try {
+      const stream = this.getClient().messages.stream({
+        model: config.ANTHROPIC_MODEL,
+        max_tokens: maxTokens,
+        system: input.system,
+        messages: [{ role: 'user', content: input.prompt }],
+      });
+
+      stream.on('text', (_delta, textSnapshot) => {
+        report(textSnapshot.length / approxMaxChars);
+      });
+
+      const message = await stream.finalMessage();
+      const text = message.content
+        .filter(
+          (block): block is Extract<typeof block, { type: 'text' }> =>
+            block.type === 'text',
+        )
+        .map((block) => block.text)
+        .join('\n');
+
+      return { text, model: config.ANTHROPIC_MODEL };
+    } finally {
+      clearInterval(heartbeat);
+    }
   }
 }

@@ -31,7 +31,7 @@ export class AnalyzeRepoUseCase {
     let cleanup: () => Promise<void> = async () => {};
 
     try {
-      await this.report(jobId, 'structure', 10, 'Extrayendo el repositorio');
+      await this.report(jobId, 'structure', 5, 'Extrayendo el repositorio');
       const repo = await source.materialize(); // descomprime el archivo zip y prepara la carpeta temporal
       cleanup = repo.cleanup;
 
@@ -39,21 +39,39 @@ export class AnalyzeRepoUseCase {
       await this.report(
         jobId,
         'structure',
-        35,
+        15,
         `${structure.fileCount} ficheros, ${structure.byExtension.length} tipos`,
       );
 
       const manifests = await readManifests(repo.dir, structure.keyFiles);
-      await this.report(jobId, 'manifests', 60, `${manifests.length} manifiestos detectados`);
+      await this.report(jobId, 'manifests', 25, `${manifests.length} manifiestos detectados`);
 
       const overview = buildOverview(structure, manifests, source.name);
 
-      await this.report(jobId, 'llm', 80, 'Infiriendo propósito y arquitectura');
+      // el LLM es, con diferencia, la fase más lenta: le dejamos casi todo el rango
+      // restante (30-95%) y lo vamos llenando con el progreso real del streaming
+      const LLM_START = 30;
+      const LLM_END = 95;
+      await this.report(jobId, 'llm', LLM_START, 'Infiriendo propósito y arquitectura');
+
+      let lastLlmPct = LLM_START;
+      let pendingReport: Promise<void> = Promise.resolve();
       const { text, model } = await this.deps.llm.complete({
         system: SYSTEM_PROMPT,
         prompt: buildUserPrompt(structure, manifests),
         maxTokens: 8192,
+        onProgress: (ratio) => {
+          const pct = Math.round(LLM_START + ratio * (LLM_END - LLM_START));
+          if (pct > lastLlmPct) {
+            lastLlmPct = pct;
+            pendingReport = this.report(jobId, 'llm', pct, 'Generando el análisis…').catch(
+              () => undefined,
+            );
+          }
+        },
       });
+      // evita que un reporte de progreso tardío pise el estado 'done' que viene abajo
+      await pendingReport;
       const result = parseAnalysisResult(text, model, overview);
 
       await this.deps.store.update(jobId, {
